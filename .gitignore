@@ -1,0 +1,6 @@
+*.key
+*.pyc
+.DS_Store
+__pycache__/
+brand/
+dist/

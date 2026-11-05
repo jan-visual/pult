@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pult">
+<meta name="theme-color" content="#0b0b0b">
+<link rel="icon" href="/static/icons/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/static/icons/icon-180.png">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="stylesheet" href="/static/style.css">
+<title>Pult</title>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7.5 5.2v13.6a.8.8 0 0 0 1.2.7l10.6-6.8a.8.8 0 0 0 0-1.4L8.7 4.5a.8.8 0 0 0-1.2.7z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4.2" height="14" rx="1.1" fill="currentColor" stroke="none"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.1" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path d="M15.5 6.5v11l-7.5-5.5z" fill="currentColor" stroke="none"/><path d="M7 6.5v11"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M8.5 6.5v11l7.5-5.5z" fill="currentColor" stroke="none"/><path d="M17 6.5v11"/></symbol>
+    <symbol id="i-start" viewBox="0 0 24 24"><path d="M6 5.5v13"/><path d="M18.5 6v12l-9-6z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-loop" viewBox="0 0 24 24"><path d="M17 3l3 3-3 3"/><path d="M4 11.5V10a4 4 0 0 1 4-4h12"/><path d="M7 21l-3-3 3-3"/><path d="M20 12.5V14a4 4 0 0 1-4 4H4"/></symbol>
+    <symbol id="i-vol" viewBox="0 0 24 24"><path d="M4 9.5h3.2L11.5 6v12l-4.3-3.5H4z" fill="currentColor" stroke="none"/><path d="M15 9.2a4 4 0 0 1 0 5.6"/><path d="M17.6 6.6a7.6 7.6 0 0 1 0 10.8"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9.5h3.2L11.5 6v12l-4.3-3.5H4z" fill="currentColor" stroke="none"/><path d="M15.5 9.5l5 5M20.5 9.5l-5 5"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+    <symbol id="i-shrink" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4.5 19.5l1-4.2L16.3 4.5a2.1 2.1 0 0 1 3 3L8.7 18.3z"/><path d="M14.4 6.4l3.2 3.2"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 19L18.5 5.5"/><path d="M9.5 5H19v9.5"/></symbol>
+    <symbol id="i-ellipse" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8.6" ry="6.6"/></symbol>
+    <symbol id="i-rect" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="1.6"/></symbol>
+    <symbol id="i-eraser" viewBox="0 0 24 24"><path d="M8.6 19.5L3.9 14.8a1.8 1.8 0 0 1 0-2.6l8.3-8.3a1.8 1.8 0 0 1 2.6 0l5.3 5.3a1.8 1.8 0 0 1 0 2.6l-8.3 8.3z"/><path d="M9 19.5h11"/><path d="M8.1 8.2l7.6 7.6"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4.5h6V7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 11.5a7.8 7.8 0 0 1-11.4 6.9L4 19.5l1.2-4.2A7.8 7.8 0 1 1 20 11.5z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15.5V4"/><path d="M7 8.5L12 3.5l5 5"/><path d="M4.5 15v3.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6.5a4 4 0 0 0-4 4V20"/><circle cx="9.2" cy="7.5" r="3.8"/><path d="M21.5 20v-1.5a4 4 0 0 0-3-3.9"/><path d="M15.5 3.9a3.8 3.8 0 0 1 0 7.3"/></symbol>
+    <symbol id="i-keys" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2.2"/><path d="M6.5 10h.01M10 10h.01M14 10h.01M17.5 10h.01M7.5 14h9"/></symbol>
+    <symbol id="i-side" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2.2"/><path d="M9 4.5v15"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2.2"/><path d="M15 4.5v15"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h3.8l2 2h7.2a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2.2"/><path d="M5.5 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v.5"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.6" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-zones" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.4"/><path d="M6.5 6.5h11M6.5 15.5h11" stroke-dasharray="1.6 1.8"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path d="M9 11V4.5a1.5 1.5 0 0 1 3 0V11"/><path d="M12 10.5V9a1.5 1.5 0 0 1 3 0v2"/><path d="M15 10.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a6 6 0 0 1-4.6-2.2L4 15.5a1.5 1.5 0 0 1 2.3-1.9L9 16"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v2.5"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M4.5 11.8L19.5 4.5l-4.3 15-3.4-6.1z"/><path d="M11.8 13.4l7.7-8.9"/></symbol>
+    <symbol id="i-stopnotes" viewBox="0 0 24 24"><path d="M5 4.5v15"/><path d="M5 5h11.5l-2.8 4 2.8 4H5" /></symbol>
+    <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
+    <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+    <symbol id="i-chev-d" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></symbol>
+    <symbol id="i-install" viewBox="0 0 24 24"><path d="M12 3.5v11"/><path d="M7.5 10L12 14.5 16.5 10"/><rect x="4" y="17" width="16" height="3.5" rx="1.2"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4.5H15"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.2"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5L6 19.5"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.2"/><path d="M7.5 4.5v15M16.5 4.5v15M3.5 9h4M3.5 15h4M16.5 9h4M16.5 15h4"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3.5l1.9 5.4 5.6 2-5.6 2L12 18.5l-1.9-5.6-5.6-2 5.6-2z" fill="currentColor" stroke="none"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3.5v11"/><path d="M8 7.5l4-4 4 4"/><path d="M8.5 10.5H7a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1.5"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3.5 13.5l2.7-7.3a2 2 0 0 1 1.9-1.2h7.8a2 2 0 0 1 1.9 1.2l2.7 7.3V18a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 13.5h5l1.5 2.5h4l1.5-2.5h5"/></symbol>
+  </defs>
+</svg>
+
+<div id="app" class="app">
+  <header class="topbar">
+    <button id="sideBtn" class="ib" title="Dávky (B)"><svg class="i"><use href="#i-side"/></svg></button>
+    <a class="brand" href="#" id="brand" title="Pult"><img src="/static/icons/logo.svg" alt=""><span>Pult</span></a>
+    <div class="crumb">
+      <button id="batchTitle" class="crumb-title" title="Přejmenovat dávku"></button>
+      <span id="batchMeta" class="crumb-meta"></span>
+    </div>
+    <div class="grow"></div>
+    <span id="net" class="net" title="Spojení se serverem"></span>
+    <button id="claudeBtn" class="chip claude-chip" hidden><svg class="i"><use href="#i-spark"/></svg><span id="claudeLbl">Claude pracuje</span></button>
+    <div id="people" class="people"></div>
+    <button id="togetherBtn" class="chip" title="Přehrávat spolu: přehrávání, posun a přepínání se sdílí s ostatními zařízeními (T)"><svg class="i"><use href="#i-link"/></svg><span>Spolu</span></button>
+    <button id="teamBtn" class="ib" title="Tým a sdílení"><svg class="i"><use href="#i-users"/></svg></button>
+    <button id="helpBtn" class="ib" title="Klávesové zkratky (?)"><svg class="i"><use href="#i-keys"/></svg></button>
+    <button id="settingsBtn" class="ib" title="Nastavení"><svg class="i"><use href="#i-gear"/></svg></button>
+    <button id="notesBtn" class="ib" title="Připomínky (\)"><svg class="i"><use href="#i-panel"/></svg><b id="notesBadge" class="badge" hidden></b></button>
+  </header>
+
+  <aside id="side" class="side">
+    <div class="side-head">
+      <label class="search"><svg class="i"><use href="#i-search"/></svg><input id="search" type="search" placeholder="Hledat dávku" autocomplete="off"></label>
+      <button id="addBtn" class="btn primary sm" title="Nahrát obrázky nebo videa (nebo je přetáhni do okna)"><svg class="i"><use href="#i-plus"/></svg>Přidat</button>
+    </div>
+    <div id="batchList" class="batch-list"></div>
+    <input id="fileInput" type="file" multiple accept="image/*,video/*,.heic,.heif,.mov,.mkv,.mxf,.tif,.tiff" hidden>
+  </aside>
+
+  <main class="center">
+    <div class="itembar">
+      <div class="item-id" id="itemId"><b id="itemNo"></b><span id="itemName"></span><span id="itemMeta" class="dim"></span></div>
+      <button id="fileBtn" class="chip file-chip" draggable="true" hidden><svg class="i"><use href="#i-share"/></svg><span>Sdílet</span></button>
+      <button id="aiChip" class="chip ai-chip" hidden title="Soubor má v metadatech stopy AI. Instagram a YouTube ho podle nich můžou označit jako vytvořený pomocí AI."><svg class="i"><use href="#i-spark"/></svg><span>AI metadata</span></button>
+      <div class="grow"></div>
+      <div class="verdict" id="verdict">
+        <button data-v="ok" class="vbtn ok" title="Schválit (S)"><svg class="i"><use href="#i-check"/></svg><span>Schválit</span></button>
+        <button data-v="no" class="vbtn no" title="Zamítnout (X)"><svg class="i"><use href="#i-x"/></svg><span>Zamítnout</span></button>
+      </div>
+      <button id="submitMini" class="btn primary submit-mini" title="Odeslat revizi (⌘Enter)"><svg class="i"><use href="#i-send"/></svg><span>Odeslat revizi</span></button>
+    </div>
+
+    <section id="stage" class="stage">
+      <div id="tools" class="palette" role="toolbar" aria-label="Kreslení">
+        <button data-tool="pen" class="tb on" title="Pero (P)"><svg class="i"><use href="#i-pen"/></svg></button>
+        <button data-tool="arrow" class="tb" title="Šipka (A)"><svg class="i"><use href="#i-arrow"/></svg></button>
+        <button data-tool="ellipse" class="tb" title="Kroužek (O)"><svg class="i"><use href="#i-ellipse"/></svg></button>
+        <button data-tool="rect" class="tb" title="Obdélník (R)"><svg class="i"><use href="#i-rect"/></svg></button>
+        <button data-tool="eraser" class="tb" title="Guma (E)"><svg class="i"><use href="#i-eraser"/></svg></button>
+        <i class="sep"></i>
+        <div class="swatches">
+          <button data-color="#ff3b30" class="sw on" style="--c:#ff3b30" title="Červená (1)"></button>
+          <button data-color="#ffcc00" class="sw" style="--c:#ffcc00" title="Žlutá (2)"></button>
+          <button data-color="#34c759" class="sw" style="--c:#34c759" title="Zelená (3)"></button>
+          <button data-color="#2f7bff" class="sw" style="--c:#2f7bff" title="Modrá (4)"></button>
+          <button data-color="#ffffff" class="sw" style="--c:#ffffff" title="Bílá (5)"></button>
+          <button data-color="#111111" class="sw" style="--c:#111111" title="Černá (6)"></button>
+        </div>
+        <i class="sep"></i>
+        <button data-size="0.003" class="tb sz" title="Tenká ([)"><i style="--d:3px"></i></button>
+        <button data-size="0.006" class="tb sz on" title="Střední"><i style="--d:6px"></i></button>
+        <button data-size="0.012" class="tb sz" title="Silná (])"><i style="--d:10px"></i></button>
+        <i class="sep"></i>
+        <button id="undoBtn" class="tb" title="Zpět (⌘Z)"><svg class="i"><use href="#i-undo"/></svg></button>
+        <button id="redoBtn" class="tb" title="Znovu (⇧⌘Z)"><svg class="i"><use href="#i-redo"/></svg></button>
+        <button id="clearBtn" class="tb" title="Smazat kresbu na tomto snímku (Delete)"><svg class="i"><use href="#i-trash"/></svg></button>
+        <button id="fingerBtn" class="tb touch-only" title="Kreslit i prstem (jinak prst přehrává a přepíná)"><svg class="i"><use href="#i-hand"/></svg></button>
+      </div>
+
+      <div id="viewport" class="viewport">
+        <div id="wrap" class="wrap">
+          <img id="img" alt="" draggable="false">
+          <video id="vid" playsinline preload="auto"></video>
+          <div id="zones" class="zones" hidden></div>
+          <canvas id="cv"></canvas>
+        </div>
+      </div>
+      <div id="prep" class="prep" hidden><div class="ring"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.5"/><circle id="prepArc" cx="18" cy="18" r="15.5"/></svg></div><b id="prepText">Připravuji náhled…</b><span id="prepSub" class="dim"></span></div>
+      <div id="loading" class="loading" hidden><i></i>Načítám…</div>
+      <button id="dictPill" class="dict-pill" hidden title="Vypnout diktování (D)"><i class="dot"></i><b id="dictState">Diktuji</b><span id="dictTime">0:00</span><span id="dictPend"></span></button>
+      <div id="waitBadge" class="wait-badge" hidden></div>
+      <div id="empty" class="empty" hidden>
+        <div class="empty-art"><svg class="i"><use href="#i-upload"/></svg></div>
+        <h2 id="emptyTitle">Zatím tu nic není</h2>
+        <p id="emptyText" class="dim">Přetáhni sem obrázky nebo videa, nebo řekni Claudovi „pošli to na Pult“.</p>
+        <button id="emptyAdd" class="btn primary"><svg class="i"><use href="#i-plus"/></svg>Vybrat soubory</button>
+      </div>
+
+      <div id="kbar" class="kbar">
+        <button id="kPlay" class="kb" title="Přehrát / pauza (mezerník)"><svg class="i"><use href="#i-play"/></svg></button>
+        <button id="kMic" class="kb kmic" title="Diktovat (D)"><svg class="i"><use href="#i-mic"/></svg></button>
+        <span id="kTime" class="kt">00:00:00</span>
+        <div id="kTrack" class="track"><div class="rail"></div><div class="fill"></div><div class="marks"></div><div class="head"></div></div>
+        <span id="kDur" class="kt dim">00:00:00</span>
+        <div class="rates k" role="group" aria-label="Rychlost přehrávání"><button data-r="1" class="on">1×</button><button data-r="1.5">1,5×</button><button data-r="2">2×</button></div>
+        <span id="kCount" class="kt dim"></span>
+        <button id="kExit" class="kb" title="Zpět (F nebo Esc)"><svg class="i"><use href="#i-shrink"/></svg></button>
+      </div>
+    </section>
+
+    <div id="transport" class="transport">
+      <button id="playBtn" class="tbtn big" title="Přehrát / pauza (mezerník)"><svg class="i"><use href="#i-play"/></svg></button>
+      <button id="micBtn" class="mic-big" title="Diktovat připomínky mikrofonem (D)"><svg class="i"><use href="#i-mic"/></svg><span id="micLabel">Diktovat</span></button>
+      <button id="prevF" class="tbtn" title="O snímek zpět (,)"><svg class="i"><use href="#i-prev"/></svg></button>
+      <button id="nextF" class="tbtn" title="O snímek vpřed (.)"><svg class="i"><use href="#i-next"/></svg></button>
+      <span id="time" class="tc" title="Minuty:sekundy:snímek">00:00:00</span>
+      <div id="track" class="track"><div class="rail"></div><div class="buffered"></div><div class="fill"></div><div class="marks"></div><div class="head"></div><div class="hover" hidden></div></div>
+      <span id="dur" class="tc dim">00:00:00</span>
+      <div class="rates" role="group" aria-label="Rychlost přehrávání" title="Rychlost (L zrychluje, J pozpátku)"><button data-r="1" class="on">1×</button><button data-r="1.5">1,5×</button><button data-r="2">2×</button></div>
+      <button id="loopBtn" class="tbtn" title="Smyčka (Shift+L)"><svg class="i"><use href="#i-loop"/></svg></button>
+      <button id="stopNotesBtn" class="tbtn" title="Zastavit na připomínkách"><svg class="i"><use href="#i-stopnotes"/></svg></button>
+      <div class="vol"><button id="muteBtn" class="tbtn" title="Ztlumit (M)"><svg class="i"><use href="#i-vol"/></svg></button><input id="volume" type="range" min="0" max="1" step="0.02" value="1" aria-label="Hlasitost"></div>
+      <button id="zonesBtn" class="tbtn" title="Bezpečné zóny pro Reels, TikTok a Shorts (G)"><svg class="i"><use href="#i-zones"/></svg></button>
+      <button id="kinoBtn" class="tbtn" title="Celá obrazovka, jen obraz (F)"><svg class="i"><use href="#i-expand"/></svg></button>
+    </div>
+
+    <nav id="strip" class="strip"></nav>
+  </main>
+
+  <aside id="notes" class="notes">
+    <div class="notes-head">
+      <b>Připomínky</b><span id="notesCount" class="count"></span>
+      <div class="grow"></div>
+      <div class="seg" id="notesScope">
+        <button data-scope="item" class="on">Tahle položka</button>
+        <button data-scope="all">Celá dávka</button>
+      </div>
+    </div>
+    <div id="agentNote" class="agent-note" hidden></div>
+    <div id="noteList" class="note-list"></div>
+    <div class="composer">
+      <div class="anchor"><button id="anchorBtn" class="anchor-btn" title="Ke kterému místu se komentář váže"></button></div>
+      <div class="compose-row">
+        <textarea id="commentInput" rows="1" placeholder="Napiš připomínku… (C)"></textarea>
+        <button id="sendBtn" class="ib accent" title="Přidat (Enter)"><svg class="i"><use href="#i-send"/></svg></button>
+      </div>
+    </div>
+    <div class="submit-box">
+      <div id="submitSummary" class="summary dim"></div>
+      <div class="submit-row">
+        <button id="submitBtn" class="btn primary wide" title="Odeslat revizi Claudovi (⌘Enter)">Odeslat revizi</button>
+        <button id="batchMenuBtn" class="ib" title="Další akce"><svg class="i"><use href="#i-more"/></svg></button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div id="drop" class="drop" hidden><div><svg class="i"><use href="#i-upload"/></svg><b>Pusť soubory na Pult</b><span>Obrázky a videa, klidně celou složku</span></div></div>
+<div id="layer" class="layer"></div>
+<div id="toasts" class="toasts"></div>
+
+<script src="/lang.js"></script>
+<script type="module" src="/static/js/i18n.js"></script>
+<script type="module" src="/static/js/app.js"></script>
+</body>
+</html>
