@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pult isn't running</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0b0b;color:#f2f2f1;font:15px/1.5 -apple-system,"Segoe UI",system-ui,sans-serif;text-align:center}
+div{max-width:440px;padding:24px}h1{font-size:20px;margin:14px 0 6px}p{color:#a6a6a4;margin:0 0 10px}code{background:#202020;padding:2px 6px;border-radius:6px}
+i{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid #2a2a2a;border-top-color:#fff;animation:s .8s linear infinite;vertical-align:-2px;margin-right:6px}@keyframes s{to{transform:rotate(360deg)}}</style></head>
+<body><div><img src="/static/icons/icon-192.png" width="64" height="64" alt="">
+<h1 id="h">Pult isn't running</h1><p id="t">The Pult server on this computer isn't running. It starts by itself after login, or start it with <code>pult start</code> (or ask your AI agent to “start Pult”).</p>
+<p><i></i><span id="r">Trying to reconnect…</span></p></div>
+<script>try{const l=JSON.parse(localStorage.getItem("pult.lang")||"null")||((navigator.language||"").startsWith("cs")?"cs":"en");if(l==="cs"){document.documentElement.lang="cs";document.title="Pult neběží";h.textContent="Pult teď neběží";t.innerHTML="Server Pultu na tomhle počítači není spuštěný. Spustí se sám po přihlášení, nebo ho zapni příkazem <code>pult start</code> (případně řekni agentovi „spusť Pult“).";r.textContent="Zkouším se znovu připojit…"}}catch(e){}</script>
+<script>setInterval(()=>fetch("/api/time",{cache:"no-store"}).then(r=>{if(r.ok)location.reload()}).catch(()=>{}),2500)</script></body></html>
