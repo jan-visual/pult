@@ -541,7 +541,7 @@ class Handler(BaseHTTPRequestHandler):
                 bid = library.create_batch(body.get("title"))
                 broadcast({"type": "batches", "batch": bid})
                 return self.send_json({"batch": bid})
-            m = re.match(r"/api/batch/([^/]+)/(items|status|label|agent-notes|rename|submit|unsubmit)$", path)
+            m = re.match(r"/api/batch/([^/]+)/(items|status|dismiss|label|agent-notes|rename|submit|unsubmit)$", path)
             if m:
                 return self.batch_action(m.group(1), m.group(2), body, frm)
             if path == "/api/add":
@@ -632,6 +632,15 @@ class Handler(BaseHTTPRequestHandler):
             library.set_status(bid, body.get("status"))
             broadcast({"type": "batches", "batch": bid, "status": body.get("status"), "from": frm})
             return self.send_json({"ok": True})
+        if action == "dismiss":  # pult dismiss: agent odklízí dávku vyřešenou v chatu
+            if not self.need_local():
+                return
+            note = str(body.get("note") or "")[:300]
+            r = library.dismiss_settled(bid, note)
+            if r.get("ok") and not r.get("already"):
+                broadcast({"type": "batches", "batch": bid, "status": "dismissed", "agent": True, "title": r.get("title"),
+                           "note": note, "replacedBy": body.get("replaced_by") or None})
+            return self.send_json(r)
         if action == "agent-notes":  # pult note: poznámka od Clauda k dávce nebo položce
             if not self.need_local():
                 return

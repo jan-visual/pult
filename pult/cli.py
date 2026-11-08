@@ -17,6 +17,7 @@ import subprocess
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import webbrowser
 
@@ -140,6 +141,15 @@ def cmd_add(a):
             library.set_agent_notes(bid, body["notes"])
         while not library.jobs.empty():
             library.prepare(*library.jobs.get(), emit=lambda m: None)
+    replaced, kept = [], []
+    for old in a.replaces or []:
+        if old == bid:
+            continue
+        r = dismiss_one(old, "replaced by %s" % (a.title or bid), bid)
+        if r.get("ok"):
+            replaced.append(old)
+        else:
+            kept.append({"batch": old, "reason": r.get("reason")})
     b, _ = library.get_batch(bid)
     res = {"batch": bid, "title": b["title"], "count": len(b["items"]), "folder": library.batch_dir(bid),
            "url": base().replace("127.0.0.1", "localhost") + "/#" + bid,
@@ -147,7 +157,48 @@ def cmd_add(a):
                       "error": it.get("error")} for it in b["items"]],
            "next": "Run `pult wait %s` in the background (Claude Code: Bash with run_in_background): when the user sends "
                    "the review in Pult, the command exits and prints it, so it lands straight in this chat." % bid}
+    if replaced:
+        res["replaced"] = replaced
+    if kept:
+        res["not_replaced"] = kept
     print(json.dumps(res, ensure_ascii=False, indent=1))
+
+
+def dismiss_one(bid, note="", replaced_by=None):
+    """Odklidí dávku (přes server, ať to Pult hned ukáže). Vrací {"ok", "title", "reason"…}."""
+    if server_up():
+        try:
+            return api("POST", "/api/batch/%s/dismiss" % urllib.parse.quote(bid), {"note": note, "replaced_by": replaced_by})
+        except urllib.error.HTTPError as e:
+            return {"ok": False, "reason": "batch not found" if e.code == 404 else "server error %d" % e.code}
+    try:
+        return library.dismiss_settled(bid, note)
+    except (OSError, ValueError):
+        return {"ok": False, "reason": "batch not found"}
+
+
+def cmd_dismiss(a):
+    failed = False
+    for bid in a.batch:
+        if a.undo:
+            try:
+                if server_up():
+                    api("POST", "/api/batch/%s/status" % urllib.parse.quote(bid), {"status": "open", "from": "cli"})
+                else:
+                    library.set_status(bid, "open")
+                print("Back in Pult: %s" % bid)
+            except (OSError, ValueError):
+                failed = True
+                print("Not changed: %s (batch not found)" % bid, file=sys.stderr)
+            continue
+        r = dismiss_one(bid, a.message or "")
+        if r.get("ok"):
+            print("Removed from To review: %s (it can be restored: pult dismiss --undo %s)" % (r.get("title") or bid, bid))
+        else:
+            failed = True
+            print("Not removed: %s, %s. Leave it to the user." % (r.get("title") or bid, r.get("reason")), file=sys.stderr)
+    if failed:
+        sys.exit(1)
 
 
 def stage_unreadable(files):
@@ -308,7 +359,7 @@ def cmd_wait(a):
                 return
             b = library.load_json(os.path.join(d, "batch.json"), {})
             if b.get("status") == "dismissed":
-                print("Batch %s was deleted in Pult, no review will come." % bid)
+                print("Batch %s was removed from Pult, no review will come." % bid)
                 sys.exit(2)
             if a.timeout and time.time() - t0 > a.timeout * 3600:
                 print("No review within %g h. When the user sends it, find it with: pult status" % a.timeout)
@@ -492,6 +543,7 @@ def main():
     pa.add_argument("--copy", action="store_true", help="copy the originals into the library")
     pa.add_argument("-m", "--message", help="short key note for the whole batch (the user sees it in Pult)")
     pa.add_argument("--item-note", action="append", metavar="N: TEXT", help="note for item #N (repeatable)")
+    pa.add_argument("--replaces", action="append", metavar="BATCH", help="this is a new version of BATCH: remove the old batch if nobody reviewed it (repeatable)")
     pa.add_argument("--wait", action="store_true", help="wait until previews are ready")
     pa.add_argument("--wait-max", type=int, default=900)
     pa.set_defaults(fn=cmd_add)
@@ -500,6 +552,11 @@ def main():
     pn.add_argument("text")
     pn.add_argument("-i", "--item", type=int, help="item number (#N)")
     pn.set_defaults(fn=cmd_note)
+    px = sub.add_parser("dismiss", help="remove batches that were settled in the chat (refuses batches with someone's notes)")
+    px.add_argument("batch", nargs="+")
+    px.add_argument("-m", "--message", help="why, in a few words (the user sees it in Pult)")
+    px.add_argument("--undo", action="store_true", help="put the batch back in To review")
+    px.set_defaults(fn=cmd_dismiss)
     pd = sub.add_parser("dictation", help="microphone dictation: status | install | use PYTHON | model whisper-large|whisper-turbo|parakeet-v3|elevenlabs | key | on | off")
     pd.add_argument("action", nargs="?", default="status", choices=["status", "install", "use", "model", "key", "on", "off"])
     pd.add_argument("python", nargs="?")
