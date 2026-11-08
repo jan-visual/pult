@@ -24,6 +24,12 @@ The agent clones the repo, installs Python and ffmpeg if needed, sets up Pult to
 
 Manual install: `git clone https://github.com/jan-visual/pult ~/pult-source && cd ~/pult-source && python3 install.py` (Windows: `py install.py`). Needs Python 3.9+ and ffmpeg for video.
 
+To update, tell your agent "Update Pult" or run `pult update`. Your library and settings stay. On an older Pult paste this instead:
+
+```
+Update Pult: https://github.com/jan-visual/pult (follow "Updating" in INSTALL.md)
+```
+
 ## What you can do
 
 - **Draw on the exact frame:** pen, arrow, ellipse, rectangle, with mouse, pen tablet or Apple Pencil. Every stroke belongs to one precise frame.

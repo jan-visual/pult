@@ -473,6 +473,86 @@ def cmd_settings(a):
     print(json.dumps(cfg, ensure_ascii=False, indent=1))
 
 
+def git(src, *args, timeout=180):
+    env = dict(os.environ, GIT_TERMINAL_PROMPT="0")  # soukromé repo bez přihlášení: chyba, ne viset na hesle
+    return subprocess.run(["git", "-C", src] + list(args), capture_output=True, text=True, encoding="utf-8",
+                          errors="replace", timeout=timeout, env=env)
+
+
+def update_stop(text, code=3):
+    print(text, file=sys.stderr)
+    sys.exit(code)
+
+
+def source_version(src):
+    try:
+        with open(os.path.join(src, "pult", "config.py"), encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("VERSION = "):
+                    return line.split('"')[1]
+    except (OSError, IndexError):
+        pass
+    return ""
+
+
+def cmd_update(a):
+    """Nová verze Pultu z repozitáře, odkud byl nainstalovaný. Knihovna a nastavení zůstávají, cizí úpravy se nepřepíšou."""
+    is_src = lambda p: p and os.path.isfile(os.path.join(p, "install.py")) and os.path.isfile(os.path.join(p, "pult", "server.py"))
+    src = next((p for p in [a.source and os.path.abspath(os.path.expanduser(a.source)), service().get("source"),
+                            os.path.expanduser("~/pult-source")] if is_src(p)), None)
+    if not src:
+        update_stop("Cannot find the folder Pult was installed from. Run: pult update --from FOLDER", 1)
+    if not shutil.which("git"):
+        update_stop("git is not installed, so Pult cannot update itself.", 1)
+    if not os.path.exists(os.path.join(src, ".git")):
+        update_stop("%s is not a git clone (installed from a zip?). Download the new version and run install.py again." % src, 1)
+    dirty = git(src, "status", "--porcelain", "--untracked-files=no").stdout.strip()
+    if dirty:
+        update_stop("Not updated: %s has local changes. They were left untouched:\n%s" % (src, dirty))
+    if git(src, "symbolic-ref", "-q", "HEAD").returncode:
+        update_stop("Not updated: %s is not on a branch." % src)
+    r = git(src, "fetch", "--quiet")
+    if r.returncode:
+        update_stop("Could not download the new version (no internet, or no access to the repository):\n%s" % r.stderr.strip()[-400:], 1)
+    new = git(src, "rev-parse", "@{u}").stdout.strip()
+    if not new:
+        update_stop("Not updated: the branch in %s does not follow any repository." % src)
+    old = git(src, "rev-parse", "HEAD").stdout.strip()
+    base = git(src, "merge-base", "HEAD", "@{u}")
+    log = ""
+    if base.returncode:  # repozitář má přepsanou historii: staré commity zůstanou v záložní větvi
+        backup = "before-update-" + time.strftime("%Y%m%d-%H%M%S")
+        git(src, "branch", backup)
+        if git(src, "reset", "--hard", "@{u}").returncode:
+            update_stop("Not updated: could not switch %s to the new version." % src, 1)
+        print("The repository history was rewritten; your previous state is kept in branch %s." % backup)
+    elif old != new and base.stdout.strip() == old:
+        log = git(src, "log", "--format=- %s", "-15", "%s..%s" % (old, new)).stdout.strip()
+        r = git(src, "merge", "--ff-only", "--quiet", "@{u}")
+        if r.returncode:
+            update_stop("Not updated: %s" % r.stderr.strip()[-400:], 1)
+    elif old != new and base.stdout.strip() != new:
+        update_stop("Not updated: %s has its own commits that differ from the repository. They were left untouched." % src)
+    head = git(src, "rev-parse", "HEAD").stdout.strip()
+    target = source_version(src)
+    pending = os.path.join(config.config_dir(), "update-pending")  # stažené, ale instalace nedoběhla: příště znovu
+    if head == old and target == config.VERSION and not os.path.exists(pending):
+        print("Pult is up to date (%s)." % config.VERSION)
+        return
+    with open(pending, "w", encoding="utf-8") as f:
+        f.write(head)
+    r = subprocess.run([sys.executable, os.path.join(src, "install.py"), "--no-open"], cwd=src, capture_output=True, text=True,
+                       encoding="utf-8", errors="replace", timeout=900)
+    if r.returncode:
+        update_stop("The new version was downloaded, but the install failed:\n%s" % ((r.stderr or r.stdout).strip()[-800:]), 1)
+    os.remove(pending)
+    print("Pult updated to %s. The library and settings are unchanged." % (target or head[:7])
+          if target == config.VERSION else
+          "Pult updated: %s -> %s. The library and settings are unchanged." % (config.VERSION, target or head[:7]))
+    if log:
+        print("What changed:\n%s" % log)
+
+
 def cmd_url(a):
     cfg = config.load()
     print("On this computer: http://localhost:%d" % cfg["port"])
@@ -552,6 +632,9 @@ def main():
     pn.add_argument("text")
     pn.add_argument("-i", "--item", type=int, help="item number (#N)")
     pn.set_defaults(fn=cmd_note)
+    pu = sub.add_parser("update", help="update Pult to the newest version (keeps the library and settings)")
+    pu.add_argument("--from", dest="source", metavar="FOLDER", help="the git clone Pult was installed from, if it cannot be found")
+    pu.set_defaults(fn=cmd_update)
     px = sub.add_parser("dismiss", help="remove batches that were settled in the chat (refuses batches with someone's notes)")
     px.add_argument("batch", nargs="+")
     px.add_argument("-m", "--message", help="why, in a few words (the user sees it in Pult)")

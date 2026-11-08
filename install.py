@@ -163,6 +163,7 @@ def install_service(app):
         start_detached(server)
     else:
         start_detached(server)
+    svc["source"] = HERE  # odsud se instalovalo: pult update tu stáhne novou verzi
     save_json(os.path.join(config.config_dir(), "service.json"), svc)
     return svc
 
@@ -484,6 +485,7 @@ def agent_block(shim, port):
         "- Right after that run `pult wait <batch id>` in the background (Claude Code: Bash with run_in_background): when the user sends the review in Pult, it arrives straight in this chat. If you cannot run background tasks, skip it; the user will say \"check Pult\". While you work on a review: `pult progress <id> \"what you are doing\"`, at the end `pult archive <folder> -m \"what is done\"`.",
         "- \"Check Pult\" / \"check the reviews\": `pult status`, then read `revize.md` and the images in the new review and act on them. Mark it done with `pult archive <folder>`.",
         "- Clean up after yourself: when a batch you sent gets settled in the chat (approved, answered, no longer needed), remove it with `pult dismiss <batch id> -m \"settled in chat\"`. When you send a new version of a batch nobody reviewed, add `--replaces <old batch id>` to `pult add`. Pult refuses batches with someone's notes: leave those to the user.",
+        "- \"Update Pult\": run `pult update`, then tell the user the new version and what changed. If it reports local changes, leave them and tell the user.",
         "- Talk to the user in their language. Details in the `pult` skill.",
         MARK_B])
 
