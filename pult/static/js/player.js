@@ -390,7 +390,7 @@ $("#nextF").onclick = () => step(1);
 // ---------- dva prsty na trackpadu: posun playheadu (jako QuickTime); s ⌘/Ctrl nebo sevřením zoom ----------
 const wheel = { on: false, t: 0, was: false, timer: 0, pubAt: 0 };
 function wheelEnd() {
-  wheel.on = false;
+  wheel.on = false; wheel.on2 = false;
   if (wheel.was) { vid.currentTime = wheel.t; play(); }
   else { seekFrame(frameOf(wheel.t, fps()), false); publish({ playing: false }); }
 }
@@ -419,7 +419,13 @@ document.addEventListener("wheel", (e) => {
   }
   // prsty doprava = dopředu, ať je přirozené posouvání zapnuté nebo ne
   const finger = e.webkitDirectionInvertedFromDevice === false ? dx : -dx;
-  const d = vid.duration || 0, perPx = Math.max(1 / (fps() * 6), d / 1500);
+  // jako QuickTime: rychlost nezávisí na délce videa. Pomalý pohyb = po snímcích, rychlý tah zrychluje
+  // (i u hodinového filmu se dá rychle přejet a pak přesně dojet na snímek)
+  const d = vid.duration || 0, dt = Math.min(50, Math.max(4, e.timeStamp - (wheel.ts || 0)));
+  wheel.ts = e.timeStamp;
+  const v = Math.abs(dx) * 16 / dt;  // px za ~snímek obrazovky
+  wheel.v = wheel.on2 ? wheel.v * 0.5 + v * 0.5 : v; wheel.on2 = true;
+  const perPx = (1 / (fps() * 4)) * Math.min(50, 1 + Math.pow(wheel.v / 10, 2));
   wheel.t = Math.min(Math.max(0, wheel.t + finger * perPx), Math.max(0, d - 0.5 / fps()));
   vid.currentTime = wheel.t; updateTime(); emit("frame"); kbarPoke();
   const now = Date.now();

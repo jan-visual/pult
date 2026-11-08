@@ -2,7 +2,7 @@
 // Nahrává se pořád, ale na server odchází jen úsek, ve kterém se mluvilo (konec úseku = chvíle ticha).
 // K úseku se zapisuje, kde ve videu člověk zrovna byl, takže server přepis vloží jako komentář
 // přesně ke snímku, kde začal mluvit. Přepis dělá Whisper na počítači s Pultem, nic nejde na internet.
-import { $, S, api, clientId, toast, emit, on, dbg } from "./core.js";
+import { $, S, api, clientId, toast, emit, on, dbg, store } from "./core.js";
 import * as P from "./player.js";
 
 const st = { on: false, stream: null, ctx: null, proc: null, seg: null, started: 0, sr: 48000,
@@ -28,7 +28,7 @@ async function start() {
   if (!S.me.name) { emit("need-name"); return; }
   st.ctx = new AC();  // hned při kliknutí: iPad jinak zvuk nepustí
   try {
-    st.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true, channelCount: 1 } });
+    st.stream = await openMic();
   } catch (e) {
     try { st.ctx.close(); } catch {}
     st.ctx = null;
@@ -50,6 +50,35 @@ async function start() {
   api("POST", "/api/dictation/warm", {}).catch(() => {});  // model se načte, zatímco člověk začne mluvit
   ui();
   if (!seenHint()) toast("Diktuji. Mluv, kdy chceš: přepis se objeví v připomínkách u snímku, kde začneš mluvit. Vypneš klávesou D. Nejlíp se sluchátky.", { ms: 6000 });
+}
+// Mikrofon: Bluetooth sluchátka (AirPods) při zapnutém mikrofonu přepnou do režimu hovoru a hrají
+// roboticky a v nízké kvalitě. Proto se diktuje do vestavěného mikrofonu, když je k dispozici
+// (Nastavení › Diktování › Mikrofon to umí změnit). Volba se pamatuje v prohlížeči (pult.mic).
+const AUDIO = { echoCancellation: true, noiseSuppression: false, autoGainControl: true, channelCount: 1 };
+export const BT_MIC = /airpods|bluetooth|headset|hands-?free|buds|beats|bose|jabra|wh-1000|wf-1000|hfp/i;
+const BUILTIN_MIC = /macbook|built-?in|vestav|intern|ipad|iphone (micro|mikro)/i;
+export async function mics() {
+  try { return (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "audioinput" && d.deviceId && d.deviceId !== "communications"); } catch { return []; }
+}
+async function openMic() {
+  const want = store.get("mic", "auto");
+  const open = (id) => navigator.mediaDevices.getUserMedia({ audio: id ? { ...AUDIO, deviceId: { exact: id } } : AUDIO });
+  let list = await mics();
+  if (want !== "auto" && want !== "default" && list.some((d) => d.deviceId === want)) return open(want).catch(() => open());
+  if (want === "default") return open();
+  // automaticky: bez názvů (prohlížeč je ukáže až po prvním povolení) nejdřív otevřít výchozí a zjistit, co to je
+  let s = null;
+  if (!list.some((d) => d.label)) { s = await open(); list = await mics(); }
+  const def = list.find((d) => d.deviceId === "default") || list[0];
+  const curLabel = s ? ((s.getAudioTracks()[0] || {}).label || "") : (def ? def.label : "");
+  const builtin = list.find((d) => d.deviceId !== "default" && BUILTIN_MIC.test(d.label) && !BT_MIC.test(d.label));
+  if (BT_MIC.test(curLabel) && builtin) {
+    if (s) s.getTracks().forEach((t) => t.stop());
+    dbg("dict: mikrofon " + builtin.label + " místo " + curLabel);
+    if (!store.get("micHint", false)) { store.set("micHint", true); toast("Diktuju do mikrofonu " + builtin.label + ", ne do sluchátek: AirPods by jinak přepnuly do režimu hovoru a hrály roboticky. Změníš v Nastavení › Diktování.", { ms: 7000 }); }
+    return open(builtin.deviceId).catch(() => open());
+  }
+  return s || open();
 }
 function seenHint() { try { const v = localStorage.getItem("pult.dictHint"); localStorage.setItem("pult.dictHint", "1"); return v; } catch { return "1"; } }
 

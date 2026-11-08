@@ -8,7 +8,7 @@ import threading
 import time
 
 APP_NAME = "Pult"
-VERSION = "2.10.1"
+VERSION = "2.10.3"
 DEFAULT_PORT = 7858  # P-U-L-T na klávesnici telefonu
 IS_WIN = sys.platform == "win32"
 IS_MAC = sys.platform == "darwin"
@@ -48,6 +48,7 @@ DEFAULTS = {
     "author_card": True,      # kartička „kdo Pult udělal“ a odkaz na autora (firemní verze ji vypíná)
     "access_code": "",
     "proxy": 1080,            # výška náhledových videí: 720, 1080, 1440, 2160
+    "hw_encode": True,        # Mac: náhledy kóduje hardware (Media Engine), jinak libx264
     "copy_originals": False,  # pult add: kopírovat originály do knihovny (nahrání z prohlížeče se kopíruje vždy)
     "cleanup_days": 14,       # odeslané a smazané dávky po N dnech do koše (0 = nikdy)
     "ffmpeg": "",

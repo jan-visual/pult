@@ -169,28 +169,84 @@ def review_size(w, h):
     return even(w * k), even(h * k)
 
 
-def make_proxy(src, dst, info, height, on_progress):
-    """Náhledové video pro prohlížeč: H.264, pevná frekvence (snímky sedí na kresby), klíčový snímek
-    dvakrát za vteřinu (rychlé skoky a krokování), faststart. Zvuk AAC 48 kHz bez mezer."""
-    ffmpeg = config.tool("ffmpeg")
-    if not ffmpeg:
-        return "Chybí ffmpeg (Nastavení › O aplikaci)."
+def direct_check(src, height):
+    """Dá se originál přehrát rovnou (jen přebalit, nic nekódovat)? Vrací (True, info) nebo (False, důvod).
+    Hotové exporty z Premiere a Resolve to obvykle splní: H.264 8 bit 4:2:0 v MP4/MOV, pevná frekvence,
+    klíčový snímek aspoň jednou za 3 s, rozumná velikost a datový tok. Ostatní se kóduje do náhledu."""
+    ffprobe = config.tool("ffprobe")
+    if not ffprobe:
+        return False, "chybí ffprobe"
+    r = run([ffprobe, "-v", "error", "-show_entries",
+             "stream=codec_type,codec_name,profile,pix_fmt,width,height,avg_frame_rate,r_frame_rate,start_time,field_order"
+             ":stream_side_data=rotation:stream_disposition=attached_pic:format=format_name,bit_rate,duration",
+             "-of", "json", src], timeout=60)
+    try:
+        j = json.loads(r.stdout or "{}")
+    except ValueError:
+        return False, "ffprobe"
+    fmt = j.get("format") or {}
+    if not re.search(r"\b(mp4|mov)\b", fmt.get("format_name") or ""):
+        return False, "kontejner %s" % fmt.get("format_name")
+    vs = [s for s in j.get("streams", []) if s.get("codec_type") == "video" and not (s.get("disposition") or {}).get("attached_pic")]
+    if not vs:
+        return False, "bez videa"
+    v = vs[0]
+    if v.get("codec_name") != "h264" or v.get("pix_fmt") not in ("yuv420p", "yuvj420p") or re.search(r"10|422|444", v.get("profile") or ""):
+        return False, "kodek %s %s %s" % (v.get("codec_name"), v.get("pix_fmt"), v.get("profile"))
+    if (v.get("field_order") or "progressive") not in ("progressive", "unknown"):
+        return False, "prokládané"
+    if any(abs(rational(sd.get("rotation") or 0)) > 0.5 for sd in v.get("side_data_list") or []):
+        return False, "otočené"
     long_side = {720: 1280, 1080: 1920, 1440: 2560, 2160: 3840}.get(int(height or 1080), 1920)
-    g = str(max(1, int(round(info.get("fps") or 30) / 2)))
-    vf = ("scale='if(gte(iw,ih),min(%d,trunc(iw/2)*2),-2)':'if(gte(iw,ih),-2,min(%d,trunc(ih/2)*2))':flags=bicubic,"
-          "setsar=1,format=yuv420p" % (long_side, long_side))
-    tmp = dst + ".tmp.mp4"
-    cmd = [ffmpeg, "-hide_banner", "-nostdin", "-y", "-i", src, "-map", "0:v:0"]
-    if info.get("audio"):
-        cmd += ["-map", "0:a:0", "-c:a", "aac", "-b:a", "192k", "-ac", "2", "-ar", "48000", "-af", "aresample=async=1:first_pts=0"]
+    if max(v.get("width") or 0, v.get("height") or 0) > long_side:
+        return False, "rozlišení %sx%s" % (v.get("width"), v.get("height"))
+    if rational(fmt.get("bit_rate")) > 25e6:
+        return False, "datový tok %.0f Mbit/s" % (rational(fmt.get("bit_rate")) / 1e6)
+    afr, rfr = rational(v.get("avg_frame_rate")), rational(v.get("r_frame_rate"))
+    if not 1 <= afr <= 240 or abs(afr - rfr) > afr * 0.002:
+        return False, "proměnlivá frekvence"
+    a = next((s for s in j.get("streams", []) if s.get("codec_type") == "audio"), None)
+    if a is not None:
+        if a.get("codec_name") not in ("aac", "mp3"):
+            return False, "zvuk %s" % a.get("codec_name")
+        if abs(rational(a.get("start_time")) - rational(v.get("start_time"))) > 1.0 / afr:
+            return False, "posunutý zvuk"
+    # časy snímků a klíčové snímky v první minutě (čte jen pakety, nic nedekóduje)
+    r = run([ffprobe, "-v", "error", "-select_streams", "v:0", "-read_intervals", "%+60", "-show_entries",
+             "packet=pts_time,flags", "-of", "csv=p=0", src], timeout=60)
+    pts, keys = [], []
+    for line in (r.stdout or "").splitlines():
+        p = line.split(",")
+        try:
+            t = float(p[0])
+        except (ValueError, IndexError):
+            continue
+        pts.append(t)
+        if len(p) > 1 and "K" in p[1]:
+            keys.append(t)
+    if len(pts) < 2:
+        return False, "nečitelné časy snímků"
+    pts.sort()
+    step = 1.0 / afr
+    bad = sum(1 for x, y in zip(pts, pts[1:]) if abs((y - x) - step) > step * 0.1)
+    if bad > len(pts) * 0.01:
+        return False, "nepravidelné časy snímků"
+    keys.sort()
+    gaps = [y - x for x, y in zip(keys, keys[1:])] + [pts[-1] - keys[-1] if keys else 99]
+    if not keys or max(gaps) > 3.05:
+        return False, "klíčový snímek jen jednou za %.1f s" % max(gaps)
+    return True, {"audio": a is not None}
+
+
+def _ffmpeg(cmd, tmp, dst, dur, on_progress):
+    """Spustí ffmpeg s průběhem a nízkou prioritou (Mac při přípravě náhledu zůstane plynulý)."""
+    kw = {}
+    if config.IS_WIN:
+        kw["creationflags"] = NO_WINDOW | 0x00004000  # BELOW_NORMAL_PRIORITY_CLASS
     else:
-        cmd += ["-an"]
-    cmd += ["-vf", vf, "-r", info.get("fps_s") or "30"] + fps_mode_args() + [
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-g", g, "-keyint_min", g, "-sc_threshold", "0",
-        "-profile:v", "high", "-movflags", "+faststart", "-map_metadata", "-1", "-progress", "pipe:1", "-nostats", tmp]
-    dur = info.get("duration") or 0
+        kw["preexec_fn"] = lambda: os.nice(10)
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8",
-                         errors="replace", creationflags=NO_WINDOW)
+                         errors="replace", **kw)
     err = []
     t = threading.Thread(target=lambda: err.extend(p.stderr.read().splitlines()[-12:]), daemon=True)
     t.start()
@@ -210,6 +266,46 @@ def make_proxy(src, dst, info, height, on_progress):
         return "\n".join(err) or "ffmpeg selhal"
     os.replace(tmp, dst)
     return None
+
+
+def make_proxy(src, dst, info, height, on_progress):
+    """Video pro prohlížeč. Vyhovující originál se jen přebalí (vteřiny, bez kódování). Jinak náhled:
+    H.264, pevná frekvence (snímky sedí na kresby), klíčový snímek dvakrát za vteřinu (rychlé skoky
+    a krokování), faststart, zvuk AAC 48 kHz bez mezer. Na Macu kóduje hardware (Media Engine),
+    procesor skoro nezatíží; když to nejde, kóduje libx264. Vrací (chyba, způsob)."""
+    ffmpeg = config.tool("ffmpeg")
+    if not ffmpeg:
+        return "Chybí ffmpeg (Nastavení › O aplikaci).", None
+    tmp = dst + ".tmp.mp4"
+    dur = info.get("duration") or 0
+    ok, why = direct_check(src, height)
+    if ok:
+        cmd = [ffmpeg, "-hide_banner", "-nostdin", "-y", "-i", src, "-map", "0:v:0"] + (["-map", "0:a:0"] if why["audio"] else ["-an"]) + [
+            "-c", "copy", "-movflags", "+faststart", "-map_metadata", "-1", "-progress", "pipe:1", "-nostats", tmp]
+        if not _ffmpeg(cmd, tmp, dst, dur, on_progress):
+            return None, "original"
+        why = "přebalení selhalo"
+    long_side = {720: 1280, 1080: 1920, 1440: 2560, 2160: 3840}.get(int(height or 1080), 1920)
+    g = str(max(1, int(round(info.get("fps") or 30) / 2)))
+    vf = ("scale='if(gte(iw,ih),min(%d,trunc(iw/2)*2),-2)':'if(gte(iw,ih),-2,min(%d,trunc(ih/2)*2))':flags=bicubic,"
+          "setsar=1,format=yuv420p" % (long_side, long_side))
+    def build(hw):
+        cmd = [ffmpeg, "-hide_banner", "-nostdin", "-y"] + (["-hwaccel", "videotoolbox"] if hw else []) + ["-i", src, "-map", "0:v:0"]
+        if info.get("audio"):
+            cmd += ["-map", "0:a:0", "-c:a", "aac", "-b:a", "192k", "-ac", "2", "-ar", "48000", "-af", "aresample=async=1:first_pts=0"]
+        else:
+            cmd += ["-an"]
+        cmd += ["-vf", vf, "-r", info.get("fps_s") or "30"] + fps_mode_args()
+        if hw:
+            cmd += ["-c:v", "h264_videotoolbox", "-q:v", "65", "-allow_sw", "0", "-g", g]
+        else:
+            cmd += ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-g", g, "-keyint_min", g, "-sc_threshold", "0"]
+        return cmd + ["-profile:v", "high", "-movflags", "+faststart", "-map_metadata", "-1", "-progress", "pipe:1", "-nostats", tmp]
+    if config.IS_MAC and config.load().get("hw_encode", True):
+        if not _ffmpeg(build(True), tmp, dst, dur, on_progress):
+            return None, "hw (%s)" % why
+    err = _ffmpeg(build(False), tmp, dst, dur, on_progress)
+    return err, None if err else "sw (%s)" % why
 
 
 def thumb(src, dst, at=0.0):
@@ -421,7 +517,7 @@ def prepare(bid, n, emit):
                 last[0] = time.time()
                 emit({"type": "progress", "batch": bid, "n": n, "progress": round(p, 3)})
         rel = "media/%s.mp4" % base
-        err = make_proxy(src, os.path.join(d, rel), info, config.load().get("proxy"), prog)
+        err, how = make_proxy(src, os.path.join(d, rel), info, config.load().get("proxy"), prog)
         if err:
             emit({"type": "item", "batch": bid, "item": update_item(bid, n, state="error", error=err[-600:])})
             return
@@ -432,7 +528,7 @@ def prepare(bid, n, emit):
         fields = dict(file=rel, thumb="thumb/%s.jpg" % base, width=px.get("width"), height=px.get("height"),
                       src_width=info.get("width"), src_height=info.get("height"), codec=info.get("codec"),
                       fps=fps, duration=round(dur, 3), frames=px.get("frames") or int(round(dur * fps)),
-                      audio=bool(px.get("audio")), state="ready", progress=1, error=None)
+                      audio=bool(px.get("audio")), proxy=how, state="ready", progress=1, error=None)
     else:
         ext = os.path.splitext(src)[1].lower()
         if ext in (".jpg", ".jpeg", ".jfif") and rotated_jpeg(src, os.path.join(d, "media", base + ".rot.jpg")):

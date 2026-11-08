@@ -3,6 +3,7 @@ import { $, $$, S, store, api, esc, icon, emit, toast, dialog, confirmBox, copyT
 import { LANG, setLang } from "./i18n.js";
 import { setLoop, setStopAtNotes, avDelayMs, setAvDelay, detectAudioOut, AV_BT_MS } from "./player.js";
 import { setFinger } from "./draw.js";
+import { mics, BT_MIC } from "./dictate.js";
 
 let installPrompt = null;
 addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installPrompt = e; });
@@ -123,20 +124,24 @@ const PANES = {
     if (!v.local) {
       sec.innerHTML = `<h4>Diktování</h4>${how}
         ${window.isSecureContext ? `<p class="ok-t">✓ Na téhle adrese mikrofon funguje.</p>` : `<div class="note-box">Safari na iPadu pustí mikrofon jen na zabezpečené adrese (https). Jednou si nainstaluj certifikát Pultu, pak používej zabezpečený odkaz.</div>${ipadSteps}`}
-        <div class="field"><span>Přepis</span><span class="dim">${d.ready ? esc(d.model || "") : esc(d.reason || "není připravený")}</span></div>`;
+        <div class="field"><span>Přepis</span><span class="dim">${d.ready ? esc(d.model || "") : esc(d.reason || "není připravený")}</span></div>
+        <div class="field"><span>Mikrofon</span><select class="inp" id="stMic"><option value="auto">Automaticky (počítač, když máš sluchátka)</option><option value="default">Výchozí v systému</option></select><small>Bluetooth sluchátka (AirPods) při zapnutém mikrofonu přepnou do režimu hovoru a zvuk videa pak zní roboticky. Automatika proto diktuje do mikrofonu počítače a sluchátka dál hrají v plné kvalitě.</small></div>`;
       $$("[data-copy]", sec).forEach((b) => (b.onclick = () => copyText(b.dataset.copy)));
+      micSelect(sec);
       return;
     }
     const avail = d.available || [];
     sec.innerHTML = `<h4>Diktování</h4>${how}
       <div class="field"><span>Stav</span>${d.ready ? `<span class="ok-t">✓ Připravené · ${esc(d.engine)} · ${esc(d.model)}</span>` : `<span class="no-t">✗ ${esc(d.reason || "není připravené")}</span><small>Řekni Claudovi „zapni v Pultu diktování“ (<kbd>pult dictation install</kbd>).</small>`}</div>
       <div class="row" style="margin:-4px 0 12px"><button class="btn sm" id="stDictWizard">${icon("mic")}Průvodce nastavením</button></div>
+      <div class="field"><span>Mikrofon</span><select class="inp" id="stMic"><option value="auto">Automaticky (počítač, když máš sluchátka)</option><option value="default">Výchozí v systému</option></select><small>Bluetooth sluchátka (AirPods) při zapnutém mikrofonu přepnou do režimu hovoru a zvuk videa pak zní roboticky. Automatika proto diktuje do mikrofonu počítače a sluchátka dál hrají v plné kvalitě.</small></div>
       <div class="field"><span>Model pro přepis</span>${MODELS.map(([k, l, sub]) => `<label class="radio${avail.includes(k) ? "" : " dim"}"><input type="radio" name="asrModel" value="${k}" ${(d.choice || "whisper-large") === k ? "checked" : ""} ${avail.includes(k) ? "" : "disabled"}> <span><b>${l}</b><br><small>${sub}${avail.includes(k) ? "" : " Není nainstalovaný."}</small></span></label>`).join("")}</div>
       <div class="field"><span>API klíč ElevenLabs (pro cloud)</span>${d.el_key
         ? `<div class="row"><span class="ok-t grow">✓ Uložený a ověřený: <code>${esc(d.el_key)}</code></span><button class="btn sm danger" id="stElDel">Smazat</button></div>`
         : `<div class="row"><input class="inp" id="stElKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk_…"><button class="btn sm primary" id="stElSave">Uložit a ověřit</button></div>`}
         <small>Klíč zůstane jen na tomhle počítači (v nastavení Pultu, čitelný jen pro tvůj účet). Na ElevenLabs stačí klíč s právem Speech to Text.</small></div>
       <div class="field"><span>Mikrofon na iPadu a u kolegů v síti</span><small>Prohlížeč pustí mikrofon jen na zabezpečené adrese (https). Pult ji má, když je zapnuté sdílení v síti (záložka Tým).</small>${ipadSteps}</div>`;
+    micSelect(sec);
     $$("input[name=asrModel]", sec).forEach((r) => (r.onchange = async () => { if (await save({ asr_model: r.value })) { await loadSettings(); PANES.dictation(sec); } }));
     if ($("#stDictWizard", sec)) $("#stDictWizard", sec).onclick = () => { if (dlg && dlg.close) dlg.close(); dictationSetup(); };
     const keyInp = $("#stElKey", sec);
@@ -248,6 +253,20 @@ async function maybeDictationSetup() {
   const v = await loadSettings();
   if (v.dictation && v.dictation.ready) { store.set("dictOnboard", true); return; }
   dictationSetup();
+}
+// výběr mikrofonu pro diktování (pamatuje se v tomhle prohlížeči)
+async function micSelect(sec) {
+  const sel = $("#stMic", sec);
+  if (!sel) return;
+  const list = await mics();
+  list.filter((d) => d.deviceId !== "default").forEach((d, i) => {
+    const o = document.createElement("option");
+    o.value = d.deviceId; o.textContent = (d.label || "Mikrofon " + (i + 1)) + (BT_MIC.test(d.label) ? " (sluchátka, zvuk bude jako při hovoru)" : "");
+    sel.appendChild(o);
+  });
+  const cur = store.get("mic", "auto");
+  sel.value = [...sel.options].some((o) => o.value === cur) ? cur : "auto";
+  sel.onchange = () => { store.set("mic", sel.value); toast("Mikrofon změněn. Platí od dalšího zapnutí diktování."); };
 }
 export function dictationSetup() {
   store.set("dictOnboard", true);

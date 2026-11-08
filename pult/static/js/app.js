@@ -1,5 +1,5 @@
 // Pult: hlavní modul (spojení se serverem, navigace, pás položek, zkratky, lidé na pultu).
-const VERSION = "2.10.1";
+const VERSION = "2.10.3";
 import { $, $$, S, store, api, dialog, clientId, clock, esc, icon, on, emit, toast, ago, plural, initials, isTouch, anyDialog, dialogs, closeMenu, menu, fmtTC, dbg } from "./core.js";
 import * as P from "./player.js";
 import * as D from "./draw.js";

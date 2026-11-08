@@ -12,6 +12,9 @@ export function setLang(l) { try { localStorage.setItem(KEY, JSON.stringify(l));
 
 // přesné texty (oříznuté o mezery)
 const EN = {
+  "Mikrofon": "Microphone", "Automaticky (počítač, když máš sluchátka)": "Automatic (computer mic when you wear headphones)", "Výchozí v systému": "System default",
+  "Bluetooth sluchátka (AirPods) při zapnutém mikrofonu přepnou do režimu hovoru a zvuk videa pak zní roboticky. Automatika proto diktuje do mikrofonu počítače a sluchátka dál hrají v plné kvalitě.": "Bluetooth headphones (AirPods) switch to call mode while their microphone is on, and the video sound turns robotic. Automatic mode dictates into the computer's microphone, so the headphones keep playing at full quality.",
+  "Mikrofon změněn. Platí od dalšího zapnutí diktování.": "Microphone changed. It applies the next time you turn dictation on.",
   // obecné
   "Pult": "Pult", "Zrušit": "Cancel", "Uložit": "Save", "Uloženo": "Saved", "Smazat": "Delete", "Smazáno": "Deleted", "Vrátit": "Undo",
   "Otevřít": "Open", "Zavřít (Esc)": "Close (Esc)", "Pokračovat": "Continue", "Začít": "Get started", "Přidat": "Add", "Přidat (Enter)": "Add (Enter)",
@@ -207,6 +210,8 @@ const EN = {
 
 // texty s čísly a jmény (celý textový uzel)
 const RX = [
+  [/^Diktuju do mikrofonu (.+), ne do sluchátek: AirPods by jinak přepnuly do režimu hovoru a hrály roboticky\. Změníš v Nastavení › Diktování\.$/, "Dictating into $1, not the headphones: AirPods would otherwise switch to call mode and sound robotic. Change it in Settings › Dictation."],
+  [/^(.+) \(sluchátka, zvuk bude jako při hovoru\)$/, "$1 (headphones, sound will be like a call)"], [/^Mikrofon (\d+)$/, "Microphone $1"],
   [/^před (\d+) min$/, "$1 min ago"], [/^před (\d+) h$/, "$1 h ago"], [/^před (\d+) d$/, "$1 d ago"],
   [/^(\d+) min$/, "$1 min"], [/^(\d+) h (\d+) min$/, "$1 h $2 min"],
   [/^Claude pracuje · (.+)$/, (m, a) => `Claude is working · ${tr(a)}`], [/^Claude hotovo · (.+)$/, (m, a) => `Claude is done · ${tr(a)}`],
