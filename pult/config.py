@@ -8,7 +8,7 @@ import threading
 import time
 
 APP_NAME = "Pult"
-VERSION = "2.10.4"
+VERSION = "2.10.5"
 DEFAULT_PORT = 7858  # P-U-L-T na klávesnici telefonu
 IS_WIN = sys.platform == "win32"
 IS_MAC = sys.platform == "darwin"

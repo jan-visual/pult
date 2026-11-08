@@ -1,6 +1,6 @@
 ---
 name: pult
-description: Pult is a local review desk for images and videos (draw right on the frames, comment on a frame, approve or reject, team review). Use it whenever you create or edit images or videos for the user to review, when the user says "send it to Pult", "put it on Pult", "show me on Pult" (Czech: „pošli to na Pult“, „dej to na pult“), when they say "check Pult", "check the reviews", "what did I draw" (Czech: „koukni na Pult“, „koukni na revize“), or ask about their notes. Also for questions about Pult settings, team sharing or problems with Pult.
+description: Pult is a local review desk for images and videos (draw right on the frames, comment on a frame, approve or reject, team review). Use it whenever you create or edit images or videos for the user to review, when the user says "send it to Pult", "put it on Pult", "show me on Pult" (Czech: „pošli to na Pult“, „dej to na pult“), when they say "check Pult", "check the reviews", "what did I draw" (Czech: „koukni na Pult“, „koukni na revize“), or ask about their notes. Also for updating Pult ("update Pult", Czech: „aktualizuj Pult“), questions about Pult settings, team sharing or problems with Pult.
 ---
 
 # Pult
@@ -94,6 +94,7 @@ The user should not have to delete leftovers by hand. Do it yourself, but only f
 | `pult doctor` | check the install (Python, ffmpeg, server, start at login) |
 | `pult start` / `pult restart` / `pult stop` | server |
 | `pult reload` | reload Pult on all connected devices |
+| `pult update` | update Pult to the newest version from the repository it was installed from; the library and settings stay. Tell the user the new version and what changed. If it reports local changes or own commits, leave them and tell the user. `--from FOLDER` if the clone cannot be found |
 | `pult wait ID` | wait for the batch review (run in the background, see above) |
 | `pult progress ID "text"` | show "working" in Pult with a short message about what you are doing |
 | `pult dictation` | microphone dictation status; `pult dictation install` installs local speech-to-text (Whisper large-v3-turbo: mlx-whisper on Apple Silicon, faster-whisper elsewhere; on Mac also NVIDIA Parakeet TDT 0.6B v3; needs internet and a few GB); `pult dictation model whisper-turbo` / `parakeet-v3` switches the model (also Settings › Dictation); `pult dictation use /path/python` uses an existing environment |
