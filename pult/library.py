@@ -724,7 +724,40 @@ def set_status(bid, status):
     with lock:
         b = load_json(os.path.join(d, "batch.json"), {})
         b["status"], b["status_at"] = status, now_iso()
+        if status == "open":
+            b.pop("status_note", None)
         save_json(os.path.join(d, "batch.json"), b)
+
+
+def _filled(o):
+    """Je v připomínkách něco skutečného? (po smazání kreseb zůstávají prázdné slovníky a seznamy)"""
+    if isinstance(o, dict):
+        return any(_filled(v) for v in o.values())
+    if isinstance(o, list):
+        return any(_filled(v) for v in o)
+    return bool(o)
+
+
+def dismiss_settled(bid, note=""):
+    """Agent odklidí dávku vyřešenou v chatu. Dávku, ve které je něčí práce (kresba, komentář, verdikt,
+    odeslaná revize), odmítne: rozdělanou revizi smí odklidit jen člověk. Soubory zůstávají, jde to vrátit."""
+    d = batch_dir(bid)
+    with lock:
+        b = load_json(os.path.join(d, "batch.json"), {})
+        title = b.get("title", bid)
+        status = b.get("status", "open")
+        if status == "dismissed":
+            return {"ok": True, "already": True, "title": title}
+        if status != "open":
+            return {"ok": False, "title": title, "reason": "its review was already sent"}
+        nt = load_notes(d)
+        if b.get("submissions") or any(_filled(nt[k]) for k in ("strokes", "comments", "verdicts")):
+            return {"ok": False, "title": title, "reason": "it has someone's drawings, comments or verdicts"}
+        b["status"], b["status_at"] = "dismissed", now_iso()
+        if note:
+            b["status_note"] = str(note)[:300]
+        save_json(os.path.join(d, "batch.json"), b)
+    return {"ok": True, "title": title}
 
 
 # ---------- připomínky (kresby, komentáře, verdikty) ----------

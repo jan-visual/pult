@@ -1,5 +1,5 @@
 // Pult: hlavní modul (spojení se serverem, navigace, pás položek, zkratky, lidé na pultu).
-const VERSION = "2.10.3";
+const VERSION = "2.10.4";
 import { $, $$, S, store, api, dialog, clientId, clock, esc, icon, on, emit, toast, ago, plural, initials, isTouch, anyDialog, dialogs, closeMenu, menu, fmtTC, dbg } from "./core.js";
 import * as P from "./player.js";
 import * as D from "./draw.js";
@@ -339,9 +339,19 @@ async function handle(m) {
     }
     case "batches": {
       refreshSoon();
+      if (m.agent) {  // agent odklidil dávku vyřešenou v chatu: říct to a nabídnout vrácení
+        toast(`Claude odklidil „${m.title}“${m.note ? ": " + m.note : ""}`, { ms: 8000, action: "Vrátit", onAction: async () => {
+          await api("POST", `/api/batch/${encodeURIComponent(m.batch)}/status`, { status: "open", from: clientId });
+          await loadBatches();
+          openBatch(m.batch);
+        } });
+      }
       if (S.batch && m.batch === S.batch.id) {
         if (m.status && m.from !== clientId && m.status !== S.batch.status) {
-          if (m.status === "dismissed") { toast(`Dávku „${S.batch.title}“ někdo smazal.`); return openNextOpen(S.batch.id); }
+          if (m.status === "dismissed") {
+            if (!m.agent) toast(`Dávku „${S.batch.title}“ někdo smazal.`);
+            return m.replacedBy ? openBatch(m.replacedBy) : openNextOpen(S.batch.id);
+          }
         }
         refreshBatch();
       } else if (m.new && !S.batch) {

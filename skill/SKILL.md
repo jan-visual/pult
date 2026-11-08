@@ -74,6 +74,16 @@ pult reviews --json  # new reviews only
 4. Mark the review as done: `pult archive <review-folder> -m "what is done"` (or `all`). The user sees "done" with that message in Pult. If you picked the review up through `pult status` (without `pult wait`), first run `pult progress <review-folder>` so it shows you are working on it.
 5. If there is no new review, say so plainly and give the time of the last one. If `status` reports unsent drawings, mention them: the user has them in Pult but has not pressed **Send review** yet.
 
+## Clean up batches that are settled (`pult dismiss`, `--replaces`)
+
+The user should not have to delete leftovers by hand. Do it yourself, but only for batches you know are settled:
+
+- The user settled a batch in the chat (approved it, answered there, said it is no longer needed): `pult dismiss BATCH_ID -m "settled in chat"`.
+- You send a new version of a batch nobody reviewed: `pult add -t "Banner v3" --replaces OLD_BATCH_ID files…`. The old one goes away and anyone looking at it lands on the new one.
+- Pult refuses a batch that has someone's drawings, comments, verdicts or a sent review. Leave those to the user, there is no way to force it.
+- Do not clean up in bulk and do not remove a batch just because it is old: the user may simply not have got to it yet.
+- Nothing is deleted: the batch moves to Deleted in the sidebar, the user gets an Undo, and `pult dismiss --undo BATCH_ID` puts it back. The running `pult wait` for that batch exits with code 2, that is expected.
+
 ## Other commands
 
 | Command | What for |

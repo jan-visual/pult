@@ -483,6 +483,7 @@ def agent_block(shim, port):
         "- When you create images or videos for the user to review, send them to Pult: `pult add -t \"short title\" -m \"what matters when reviewing\" files…`, then tell the user the batch title and item count. Only things to review or approve, not references. Put the key note (what changed, what to focus on) in `-m` / `--item-note \"N: text\"`: the user sees it right in Pult.",
         "- Right after that run `pult wait <batch id>` in the background (Claude Code: Bash with run_in_background): when the user sends the review in Pult, it arrives straight in this chat. If you cannot run background tasks, skip it; the user will say \"check Pult\". While you work on a review: `pult progress <id> \"what you are doing\"`, at the end `pult archive <folder> -m \"what is done\"`.",
         "- \"Check Pult\" / \"check the reviews\": `pult status`, then read `revize.md` and the images in the new review and act on them. Mark it done with `pult archive <folder>`.",
+        "- Clean up after yourself: when a batch you sent gets settled in the chat (approved, answered, no longer needed), remove it with `pult dismiss <batch id> -m \"settled in chat\"`. When you send a new version of a batch nobody reviewed, add `--replaces <old batch id>` to `pult add`. Pult refuses batches with someone's notes: leave those to the user.",
         "- Talk to the user in their language. Details in the `pult` skill.",
         MARK_B])
 

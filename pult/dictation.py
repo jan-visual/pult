@@ -115,6 +115,15 @@ def el_request(key, wav_bytes, lang="cs"):
     finally:
         c.close()
     if r.status == 401:
+        # 401 vrací ElevenLabs i pro nezaplacené předplatné a došlý kredit: to není chyba klíče
+        try:
+            why = (json.loads(data).get("detail") or {}).get("status") or ""
+        except (ValueError, AttributeError):
+            why = ""
+        if why == "payment_issue":
+            raise RuntimeError("ElevenLabs: předplatné má nezaplacenou fakturu. Klíč je v pořádku, dokonči platbu na elevenlabs.io.")
+        if why == "quota_exceeded":
+            raise RuntimeError("ElevenLabs: došel kredit. Klíč je v pořádku.")
         raise ValueError("ElevenLabs klíč odmítl (neplatný nebo bez práva na Speech to Text).")
     if r.status >= 300:
         try:
