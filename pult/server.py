@@ -187,6 +187,17 @@ button{margin-top:14px;width:100%;padding:12px;border:0;border-radius:12px;backg
 <body><form method="get" action="/"><h1>Pult</h1><p>{msg}</p><input name="k" inputmode="numeric" autocomplete="one-time-code" autofocus placeholder="000000"><button>{go}</button></form></body></html>"""
 
 
+def natural_scrolling():
+    """Je na tomhle Macu zapnuté přirozené posouvání? Chrome to stránce neřekne. Mimo macOS None."""
+    if sys.platform != "darwin":
+        return None
+    try:
+        r = subprocess.run(["defaults", "read", "-g", "com.apple.swipescrolldirection"], capture_output=True, text=True, timeout=3)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return r.stdout.strip() != "0"  # klíč chybí = výchozí stav macOS, tedy zapnuté
+
+
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server_version = "Pult/" + config.VERSION
@@ -448,6 +459,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json(settings_view(self.local()))
             if path == "/api/audio-output":
                 return self.send_json(audio_output() if self.local() else {"name": "", "bluetooth": False})
+            if path == "/api/scroll-direction":
+                return self.send_json({"natural": natural_scrolling() if self.local() else None})
             if path == "/api/reviews":
                 return self.send_json({"reviews": library.reviews(include_archived=self.query().get("all") == "1")})
             return self.send_json({"error": "nenalezeno"}, 404)
@@ -776,6 +789,7 @@ def settings_view(local):
             "ffmpeg": ffmpeg_info(), "ffprobe": config.tool("ffprobe"), "version": config.VERSION,
             "python": sys.version.split()[0], "config": config.config_path(), "trash": library.trash_size(),
             "platform": "windows" if config.IS_WIN else "mac" if config.IS_MAC else "linux", "dictation": dictation.status(),
+            "native_app": bool(config.native_app()),
             "https": https_info()}
 
 

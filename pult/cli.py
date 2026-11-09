@@ -594,7 +594,10 @@ def cmd_doctor(a):
     srv = server_up()
     line(bool(srv), "Server: %s" % (("running at %s" % base()) if srv else "not running"), "pult start")
     svc = service()
-    line(bool(svc), "Starts at login: %s" % ("yes" if svc else "no"), "Run the installer again: python3 install.py")
+    again = "%s install.py" % ("py" if config.IS_WIN else "python3")
+    line(bool(svc), "Starts at login: %s" % ("yes" if svc else "no"), "Run the installer again: " + again)
+    if config.IS_MAC:
+        line(bool(config.native_app()), "Native app: %s" % ("yes" if config.native_app() else "no"), "xcode-select --install, then run the installer again: " + again)
     print("\nEverything is OK." if ok else "\nSomething is missing, see above.")
     sys.exit(0 if ok else 1)
 
@@ -602,6 +605,9 @@ def cmd_doctor(a):
 def cmd_open(a):
     if not server_up():
         start_server()
+    if config.native_app():
+        subprocess.run(["open", config.native_app()])  # na Macu vždy nativní aplikace, ne prohlížeč
+        return
     webbrowser.open(base().replace("127.0.0.1", "localhost") + "/")
 
 

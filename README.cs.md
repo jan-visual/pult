@@ -20,7 +20,7 @@ Nainstaluj mi Pult: https://github.com/jan-visual/pult (postupuj podle INSTALL.m
 
 Agent stáhne repozitář, doinstaluje Python a ffmpeg, nastaví spouštění po přihlášení a na Macu sestaví aplikaci Pult s ikonou v Docku.
 
-Ručně: `git clone https://github.com/jan-visual/pult ~/pult-source && cd ~/pult-source && python3 install.py` (Windows `py install.py`; potřeba Python 3.9+ a pro videa ffmpeg).
+Ručně: `git clone https://github.com/jan-visual/pult ~/pult-source && cd ~/pult-source && python3 install.py` (Windows PowerShell: `git clone https://github.com/jan-visual/pult "$HOME\pult-source"; cd "$HOME\pult-source"; py install.py`; potřeba Python 3.9+ a pro videa ffmpeg).
 
 Aktualizace: řekni agentovi „Aktualizuj Pult“ nebo spusť `pult update`. Knihovna a nastavení zůstanou. U starší verze Pultu místo toho vlož:
 
