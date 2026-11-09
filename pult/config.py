@@ -8,7 +8,7 @@ import threading
 import time
 
 APP_NAME = "Pult"
-VERSION = "2.10.5"
+VERSION = "2.10.8"
 DEFAULT_PORT = 7858  # P-U-L-T na klávesnici telefonu
 IS_WIN = sys.platform == "win32"
 IS_MAC = sys.platform == "darwin"
@@ -156,3 +156,13 @@ def tool(name, cfg=None):
         if os.path.isfile(p):
             return p
     return None
+
+
+def native_app():
+    """Nativní Pult.app na Macu, jinak None. Záložní spouštěč má v bundlu `pult` malým písmem a APFS
+    velikost písmen nerozlišuje, proto listdir a ne exists."""
+    bundle = os.path.join(os.path.expanduser("~"), "Applications", "Pult.app")
+    try:
+        return bundle if IS_MAC and "Pult" in os.listdir(os.path.join(bundle, "Contents", "MacOS")) else None
+    except OSError:
+        return None

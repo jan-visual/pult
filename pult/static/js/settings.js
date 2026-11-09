@@ -89,6 +89,8 @@ const PANES = {
         <small>Platí pro nově přidaná videa. Originál zůstává beze změny, Claude dostane přesné snímky.</small></div>` : ""}
       <div class="field"><span>Kresby při přehrávání</span><select class="inp" id="stHold"><option value="0">Jen na svém snímku</option><option value="0.5">Drží 0,5 s</option><option value="1">Drží 1 s</option><option value="2">Drží 2 s</option></select>
         <small>Kreslí se vždy do jednoho přesného snímku. Při přehrávání ji můžeš nechat chvíli svítit, ať ji stihneš vidět.</small></div>
+      <div class="field"><span>Směr posouvání dvěma prsty</span><select class="inp" id="stScrub"><option value="forward">Prsty doprava = dopředu</option><option value="back">Prsty doprava = dozadu</option></select>
+        <small>Posouvání ve videu dvěma prsty na trackpadu. Platí jen pro toto zařízení.</small></div>
       ${toggle("stStop", "Zastavit na připomínkách", "Přehrávání se samo zastaví na každém snímku s kresbou nebo komentářem.", S.stopAtNotes)}
       ${toggle("stLoop", "Smyčka", "Video se po konci přehraje znovu.", S.loop)}
       ${isTouch ? toggle("stFinger", "Kreslit i prstem", "Jinak prst přehrává a přepíná položky a kreslí jen Apple Pencil.", S.finger) : ""}
@@ -99,6 +101,8 @@ const PANES = {
     if ($("#stProxy", sec)) { $("#stProxy", sec).value = String(s.proxy || 1080); $("#stProxy", sec).onchange = (e) => save({ proxy: +e.target.value }); }
     $("#stHold", sec).value = String(S.hold);
     $("#stHold", sec).onchange = (e) => { S.hold = +e.target.value; store.set("hold", S.hold); emit("redraw"); };
+    $("#stScrub", sec).value = store.get("scrubDir", "forward");
+    $("#stScrub", sec).onchange = (e) => store.set("scrubDir", e.target.value);
     $("#stStop", sec).onchange = (e) => setStopAtNotes(e.target.checked);
     $("#stLoop", sec).onchange = (e) => setLoop(e.target.checked);
     if ($("#stFinger", sec)) $("#stFinger", sec).onchange = (e) => setFinger(e.target.checked);
@@ -194,7 +198,8 @@ const PANES = {
   app(sec) {
     const v = S.settings, br = browserName();
     let how;
-    if (standalone()) how = `<p class="ok-t">Pult už běží jako samostatná aplikace. 👍</p>`;
+    if (v.native_app && !/PultApp\//.test(navigator.userAgent)) how = `<p>Na tomhle Macu je Pult nainstalovaný jako aplikace. Otevři ho z Docku, verzi z prohlížeče nepotřebuješ.</p>`;
+    else if (standalone()) how = `<p class="ok-t">Pult už běží jako samostatná aplikace. 👍</p>`;
     else if (installPrompt) how = `<p>Nainstaluj Pult jako aplikaci: vlastní okno, ikona v Docku nebo na hlavním panelu, bez lišty prohlížeče.</p><button class="btn primary" id="stInstall">${icon("install")}Nainstalovat Pult</button>`;
     else if (br === "safari") how = `<p>V Safari: menu <b>Soubor › Přidat do Docku</b> (na iPadu: Sdílet › Přidat na plochu).</p>`;
     else if (br === "chrome" || br === "edge") how = `<p>V adresním řádku vpravo klikni na ikonu <b>Instalovat</b> (monitor se šipkou), nebo v menu ⋮ › <b>Uložit a sdílet › Instalovat Pult</b>.</p>`;

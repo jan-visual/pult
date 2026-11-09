@@ -39,7 +39,7 @@ def say(msg):
 
 
 def run(cmd, **kw):
-    return subprocess.run(cmd, capture_output=True, text=True, creationflags=NO_WINDOW, **kw)
+    return subprocess.run(cmd, capture_output=True, text=True, errors="replace", creationflags=NO_WINDOW, **kw)
 
 
 def app_dir():
@@ -342,13 +342,14 @@ def build_native_app(app, bundle, url):
     arch = "arm64" if platform.machine() == "arm64" else "x86_64"
     if run(["xcode-select", "-p"]).returncode != 0:
         shutil.rmtree(tmp, ignore_errors=True)
-        return False  # bez Command Line Tools: zůstane jednoduchý spouštěč v prohlížeči
+        return False  # bez Command Line Tools: zůstane jednoduchý spouštěč v prohlížeči (instalátor to oznámí)
     try:
         r = run(["xcrun", "swiftc", "-O", "-target", "%s-apple-macos12" % arch, src, "-o", os.path.join(tmp, "Contents", "MacOS", "Pult")], timeout=300)
     except subprocess.TimeoutExpired:
         shutil.rmtree(tmp, ignore_errors=True)
         return False
     if r.returncode != 0:
+        say("  swiftc: %s" % (r.stderr or "").strip()[-400:])
         shutil.rmtree(tmp, ignore_errors=True)
         return False
     with open(os.path.join(tmp, "Contents", "Info.plist"), "w", encoding="utf-8") as f:
@@ -394,7 +395,8 @@ def install_launcher(app, port):
     icon_png = os.path.join(app, "static", "icons", "icon-512.png")
     if IS_MAC:
         bundle = os.path.join(HOME, "Applications", "Pult.app")
-        native = build_native_app(app, bundle, url)
+        # nepovedené sestavení nesmí smazat fungující aplikaci (třeba při pult update)
+        native = build_native_app(app, bundle, url) or bool(config.native_app())
         if not native:
             shutil.rmtree(bundle, ignore_errors=True)
             os.makedirs(os.path.join(bundle, "Contents", "MacOS"))
@@ -562,6 +564,17 @@ def install_ffmpeg():
     return False
 
 
+def replace_retry(src, dst):
+    """Na Windows drží čerstvě zkopírované soubory chvíli antivir nebo Průzkumník."""
+    for i in range(20):
+        try:
+            return os.replace(src, dst)
+        except PermissionError:
+            if i == 19:
+                raise
+            time.sleep(0.5)
+
+
 def copy_app(dst):
     tmp = dst + ".new"
     shutil.rmtree(tmp, ignore_errors=True)
@@ -569,8 +582,13 @@ def copy_app(dst):
     old = dst + ".old"
     shutil.rmtree(old, ignore_errors=True)
     if os.path.exists(dst):
-        os.replace(dst, old)
-    os.replace(tmp, dst)
+        replace_retry(dst, old)
+    try:
+        replace_retry(tmp, dst)
+    except OSError:
+        if os.path.exists(old):
+            os.replace(old, dst)  # ať `pult` zůstane funkční
+        raise
     shutil.rmtree(old, ignore_errors=True)
 
 
@@ -622,9 +640,11 @@ def install(a):
     st = server_up(port, wait=12)
     say(("✓ Server running: http://localhost:%d (starts automatically at login)" % port) if st else "! Server did not start, see %s" % os.path.join(config.config_dir(), "server.log"))
     launcher = install_launcher(app, port)
-    native = bool(IS_MAC and launcher and os.path.exists(os.path.join(launcher, "Contents", "MacOS", "Pult")))
+    native = bool(config.native_app())
     if launcher:
         say(("✓ App: %s (native window)" if native else "✓ App launcher: %s") % launcher)
+    if IS_MAC and not native:
+        say("! Native app not built, Pult opens in the browser for now. Fix: xcode-select --install, then run this installer again.")
     if native and not a.no_dock and not cfg.get("dock_added"):
         if add_to_dock(launcher):
             say("✓ Added to the Dock")
@@ -645,7 +665,7 @@ def install(a):
             import webbrowser  # noqa: PLC0415
             webbrowser.open("http://localhost:%d/" % port)
     print(json.dumps({"ok": bool(st), "version": config.VERSION, "url": "http://localhost:%d" % port, "app": app,
-                      "library": config.library(cfg), "cli": shim, "ffmpeg": ff, "service": svc, "launcher": launcher},
+                      "library": config.library(cfg), "cli": shim, "ffmpeg": ff, "service": svc, "launcher": launcher, "native": native},
                      ensure_ascii=False, indent=1))
 
 

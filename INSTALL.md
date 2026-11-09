@@ -4,17 +4,17 @@ The user wants Pult installed. They gave you this folder, a zip, or the link htt
 
 ## 0. Get the code
 
-If you only have the link: `git clone https://github.com/jan-visual/pult ~/pult-source` and work in that folder. Do not clone it to `~/pult`: on macOS that is the same folder as the default library `~/Pult`. Without git, download the ZIP from GitHub (Code › Download ZIP) and unpack it.
+If you only have the link: `git clone https://github.com/jan-visual/pult ~/pult-source` (Windows PowerShell: `git clone https://github.com/jan-visual/pult "$HOME\pult-source"`) and work in that folder. Do not clone it to `~/pult`: on macOS that is the same folder as the default library `~/Pult`. Without git, download the ZIP from GitHub (Code › Download ZIP) and unpack it.
 
 ## 1. Check the system and Python
 
-- **macOS:** `python3 --version` (3.9 or newer; macOS ships it with the Command Line Tools). If it is missing, offer `xcode-select --install` or `brew install python`.
+- **macOS:** `python3 --version` (3.9 or newer; macOS ships it with the Command Line Tools). If it is missing, offer `xcode-select --install` or `brew install python`. The Command Line Tools also build the native Pult app, so check `xcode-select -p` too and offer `xcode-select --install` if it fails.
 - **Windows (PowerShell):** `py --version`. If it is missing: `winget install -e --id Python.Python.3.12`, then open a new terminal.
 
 ## 2. ffmpeg (needed for video)
 
 - **macOS:** `which ffmpeg ffprobe`. If missing and Homebrew is available: `brew install ffmpeg`.
-- **Windows:** `where ffmpeg`. If missing: `winget install -e --id Gyan.FFmpeg`.
+- **Windows:** `where.exe ffmpeg`. If missing: `winget install -e --id Gyan.FFmpeg`.
 - Without ffmpeg, Pult works for images only. Tell the user when you install ffmpeg; it is a public open-source package.
 
 ## 3. Install
@@ -32,7 +32,7 @@ The installer:
 - copies the app (macOS `~/Library/Application Support/Pult/app`, Windows `%LOCALAPPDATA%\Pult\app`),
 - makes it start at login (macOS LaunchAgent `cz.pult.server`, Windows `Pult.vbs` in the Startup folder) and starts the server right away,
 - creates the `pult` command (macOS `~/.local/bin/pult`, Windows `%LOCALAPPDATA%\Pult\bin\pult.cmd`, added to PATH),
-- on macOS builds the native **Pult app** (`~/Applications/Pult.app`: its own window, Dock icon and microphone for dictation; compiled locally with `swiftc` from the Command Line Tools in a few seconds) and adds it to the Dock (skip with `--no-dock`); on Windows it creates Start menu › Pult,
+- on macOS builds the native **Pult app** (`~/Applications/Pult.app`: its own window, Dock icon and microphone for dictation; compiled locally with `swiftc` from the Command Line Tools in a few seconds) and adds it to the Dock (skip with `--no-dock`). If it prints `! Native app not built`, run `xcode-select --install`, wait until it finishes and run the installer again; on Windows it creates Start menu › Pult,
 - teaches the AI agents on this computer to use Pult: installs the `pult` skill and adds a short block (between the `<!-- PULT:START -->` and `<!-- PULT:END -->` markers) for Claude Code (`~/.claude/skills/pult/`, `~/.claude/CLAUDE.md`) and, when Codex is installed, for Codex (`~/.codex/skills/pult/`, `~/.codex/AGENTS.md`),
 - prints a JSON status at the end and opens Pult (on macOS the app, elsewhere the browser).
 

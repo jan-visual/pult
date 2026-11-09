@@ -394,6 +394,14 @@ function wheelEnd() {
   if (wheel.was) { vid.currentTime = wheel.t; play(); }
   else { seekFrame(frameOf(wheel.t, fps()), false); publish({ playing: false }); }
 }
+// Chrome stránce neřekne, jestli je zapnuté přirozené posouvání, tak se zeptáme Macu, na kterém Pult běží.
+// Po návratu do okna znovu, kdyby se to mezitím přepnulo v Nastavení systému.
+let macNatural = null;
+if (!("webkitDirectionInvertedFromDevice" in WheelEvent.prototype)) {
+  const readNatural = () => api("GET", "/api/scroll-direction").then((r) => { macNatural = r.natural; }).catch(() => {});
+  readNatural();
+  window.addEventListener("focus", readNatural);
+}
 document.addEventListener("wheel", (e) => {
   if (!e.target.closest || !e.target.closest("#stage, #transport")) return;
   const it = item();
@@ -415,10 +423,11 @@ document.addEventListener("wheel", (e) => {
   if (!wheel.on) {
     emit("before-play");
     wheel.on = true; wheel.was = !vid.paused; wheel.t = vid.currentTime;
+    wheel.dir = store.get("scrubDir", "forward") === "back" ? -1 : 1;  // Nastavení › Přehrávání
     if (wheel.was) vid.pause();
   }
   // prsty doprava = dopředu, ať je přirozené posouvání zapnuté nebo ne
-  const finger = e.webkitDirectionInvertedFromDevice === false ? dx : -dx;
+  const finger = ((e.webkitDirectionInvertedFromDevice ?? macNatural) === false ? dx : -dx) * wheel.dir;
   // jako QuickTime: rychlost nezávisí na délce videa. Pomalý pohyb = po snímcích, rychlý tah zrychluje
   // (i u hodinového filmu se dá rychle přejet a pak přesně dojet na snímek)
   const d = vid.duration || 0, dt = Math.min(50, Math.max(4, e.timeStamp - (wheel.ts || 0)));
