@@ -229,7 +229,15 @@ $("#batchTitle").onclick = () => { if (S.batch) renameBatch(S.batches.find((x) =
 $("#batchMenuBtn").onclick = (e) => batchMenu(e.currentTarget);
 
 // ---------- nahrávání ----------
-let appendTo = null;
+let appendTo = null, uploading = 0;
+export const busy = () => uploading > 0;
+// nativní aplikace: soubory jako cesty na disku (puštěné do okna, z Docku, z panelu pro výběr), nic se nekopíruje
+export function addPaths(files, title = "", useInputTarget = false) {
+  dragDepth = 0; $("#drop").hidden = true;
+  const bid = useInputTarget ? appendTo : null;
+  appendTo = null;
+  startUpload(files, title, bid);
+}
 export function pickFiles(bid = null) { appendTo = bid; $("#fileInput").click(); }
 $("#addBtn").onclick = () => pickFiles(null);
 $("#emptyAdd").onclick = () => pickFiles(null);
@@ -269,6 +277,7 @@ function startUpload(all, title, bid) {
   const skipped = all.length - files.length;
   if (!files.length) return toast("Tyhle soubory Pult neumí. Obrázky: jpg, png, webp, heic, tif… Videa: mp4, mov, webm, mkv…", { error: true });
   const total = files.reduce((a, f) => a + f.size, 0);
+  const byPath = files.every((f) => f.path);  // originály zůstanou na místě, server si je přečte sám
   const cur = S.batch && S.batch.status === "open" ? S.batch : null;
   const suggested = title || (files.length === 1 ? files[0].name.replace(/\.[^.]+$/, "") : "");
   const body = document.createElement("div");
@@ -278,12 +287,13 @@ function startUpload(all, title, bid) {
     <label class="radio"><input type="radio" name="upMode" value="append" ${bid ? "checked" : ""}> Přidat do „${esc((bid && (S.batches.find((x) => x.id === bid) || {}).title) || (cur && cur.title) || "")}“</label>` : ""}
     <div class="files">${files.slice(0, 300).map((f) => `<div>${icon(/\.(mp4|mov|m4v|webm|mkv|avi|mxf|mts|m2ts|wmv|mpg|mpeg)$/i.test(f.name) ? "film" : "image")}<span>${esc(f.name)}</span><span class="dim">${fmtSize(f.size)}</span></div>`).join("")}${files.length > 300 ? `<div class="dim">… a dalších ${files.length - 300}</div>` : ""}</div>
     <div class="dim">${plural(files.length, "soubor", "soubory", "souborů")} · ${fmtSize(total)}${skipped ? ` · ${skipped} nepodporovaných vynechám` : ""}</div>
+    ${byPath ? `<div class="dim">Originály zůstanou na místě, Pult si z nich připraví jen náhledy.</div>` : ""}
     <div id="upProg" hidden><div class="progress"><i></i></div><div class="dim" id="upStatus"></div></div>`;
   const foot = document.createElement("div");
   foot.style.display = "contents";
-  foot.innerHTML = `<button class="btn" data-close>Zrušit</button><button class="btn primary" data-ok>${icon("upload")}Nahrát na Pult</button>`;
+  foot.innerHTML = `<button class="btn" data-close>Zrušit</button><button class="btn primary" data-ok>${icon(byPath ? "plus" : "upload")}${byPath ? "Přidat na Pult" : "Nahrát na Pult"}</button>`;
   let xhr = null, cancelled = false;
-  const d = dialog({ title: "Nahrát na Pult", body, foot, dismiss: false, onClose: () => { cancelled = true; if (xhr) xhr.abort(); } });
+  const d = dialog({ title: byPath ? "Přidat na Pult" : "Nahrát na Pult", body, foot, dismiss: false, onClose: () => { cancelled = true; if (xhr) xhr.abort(); } });
   const t = $("#upTitle", d.el);
   t.value = suggested;
   t.onkeydown = (e) => { e.stopPropagation(); if (e.key === "Enter") go(); if (e.key === "Escape") d.close(); };
@@ -296,8 +306,17 @@ function startUpload(all, title, bid) {
     if (ok.disabled) return;
     ok.disabled = true; t.disabled = true;
     $("#upProg", d.el).hidden = false;
+    uploading++;
     try {
       let target = modeEl() === "append" ? (bid || (cur && cur.id)) : null;
+      if (byPath) {
+        const r = await api("POST", "/api/add", target ? { files: files.map((f) => f.path), batch: target } : { files: files.map((f) => f.path), title: t.value.trim() || suggested });
+        d.close();
+        await loadBatches();
+        emit("open-batch", { id: r.batch });
+        toast(`Přidáno ${plural(files.length, "soubor", "soubory", "souborů")}. Náhledy se připravují.`);
+        return;
+      }
       if (!target) target = (await api("POST", "/api/batches", { title: t.value.trim() || suggested, from: clientId })).batch;
       const paths = [];
       let done = 0;
@@ -315,7 +334,7 @@ function startUpload(all, title, bid) {
       toast(`Nahráno ${plural(files.length, "soubor", "soubory", "souborů")}. Náhledy se připravují.`);
     } catch (e) {
       if (!cancelled) { toast("Nahrávání selhalo: " + e.message, { error: true }); ok.disabled = false; }
-    }
+    } finally { uploading--; }
   }
   function put(target, file, onProgress) {
     return new Promise((res, rej) => {

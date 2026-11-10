@@ -16,6 +16,8 @@ const EN = {
   "Mikrofon": "Microphone", "Automaticky (počítač, když máš sluchátka)": "Automatic (computer mic when you wear headphones)", "Výchozí v systému": "System default",
   "Bluetooth sluchátka (AirPods) při zapnutém mikrofonu přepnou do režimu hovoru a zvuk videa pak zní roboticky. Automatika proto diktuje do mikrofonu počítače a sluchátka dál hrají v plné kvalitě.": "Bluetooth headphones (AirPods) switch to call mode while their microphone is on, and the video sound turns robotic. Automatic mode dictates into the computer's microphone, so the headphones keep playing at full quality.",
   "Mikrofon změněn. Platí od dalšího zapnutí diktování.": "Microphone changed. It applies the next time you turn dictation on.",
+  "Originály zůstanou na místě, Pult si z nich připraví jen náhledy.": "The originals stay where they are. Pult only prepares previews from them.",
+  "Přidat na Pult": "Add to Pult",
   // obecné
   "Pult": "Pult", "Zrušit": "Cancel", "Uložit": "Save", "Uloženo": "Saved", "Smazat": "Delete", "Smazáno": "Deleted", "Vrátit": "Undo",
   "Otevřít": "Open", "Zavřít (Esc)": "Close (Esc)", "Pokračovat": "Continue", "Začít": "Get started", "Přidat": "Add", "Přidat (Enter)": "Add (Enter)",
@@ -249,7 +251,7 @@ const RX = [
   [/^Natrvalo se smaže (.+) starých dávek z koše\. Vrátit to nepůjde\.$/, "This permanently deletes $1 of old batches from the trash. It can't be undone."],
   [/^Koš: (.+)$/, "Trash: $1"],
   [/^Vybráno (.+)$/, "Selected: $1"], [/^Smazáno (\d.*)$/, "Deleted $1"], [/^Smazáno: (.+)$/, "Deleted: $1"], [/^Smazat (\d+ batch(es)?)$/, "Delete $1"],
-  [/^Nahráno (.+)\. Náhledy se připravují\.$/, "Uploaded $1. Previews are being prepared."], [/^(\d+) nepodporovaných vynechám$/, "$1 unsupported will be skipped"],
+  [/^Nahráno (.+)\. Náhledy se připravují\.$/, "Uploaded $1. Previews are being prepared."], [/^Přidáno (.+)\. Náhledy se připravují\.$/, "Added $1. Previews are being prepared."], [/^(\d+) nepodporovaných vynechám$/, "$1 unsupported will be skipped"],
   [/^… a dalších (\d+)$/, "… and $1 more"], [/^Prohlížeč video nepřehraje \(kód (.*?)\)\.?$/, "The browser can't play this video (code $1)."],
   [/^(.+): (.+) \(klikni a přejdi tam\)$/, (m, a, b) => `${a}: ${tr(b)} (click to go there)`], [/^(.+) · Spolu$/, (m, a) => `${tr(a)} · Together`],
   [/^na pultu$/, "on Pult"], [/^Čistá kopie hotová: (.+)$/, "Clean copy ready: $1"], [/^Kopie hotová, ale pořád obsahuje: (.+)$/, "Copy ready, but it still contains: $1"],

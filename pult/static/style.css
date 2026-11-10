@@ -539,3 +539,16 @@ select.inp { padding-right: 6px; }
 a.btn, a.btn:visited { color: var(--text); text-decoration: none; }
 a.btn.primary, a.btn.primary:visited { color: var(--on-accent); }
 .dset a, .dset a:visited { color: var(--text); }
+
+/* ---------- nativní aplikace pro macOS ---------- */
+/* Lišta má výšku toolbaru macOS, semafor (zavřít, minimalizovat, zvětšit) sedí v ní vlevo a uprostřed.
+   Odsazení od semaforu (--mac-tl) dodá aplikace podle skutečné polohy tlačítek. */
+.mac-native { --top-h: 52px; }
+.mac-native .topbar { padding-left: var(--mac-tl, 86px); }
+.mac-native.mac-fullscreen .topbar { padding-left: 10px; }
+.mac-native .brand { display: none; }
+.mac-native.mac-inactive .topbar > * { opacity: .55; }
+/* jako v nativních aplikacích: šipka místo ručičky a popisky rozhraní nejdou označit */
+.mac-native body { -webkit-user-select: none; user-select: none; cursor: default; }
+.mac-native button, .mac-native .note, .mac-native .radio, .mac-native .sw-t input,
+.mac-native .field.avd .chk, .mac-native .dset .dopt { cursor: default; }
