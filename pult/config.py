@@ -45,6 +45,8 @@ DEFAULTS = {
     "share": False,           # sdílení v síti (tým)
     "lang": "",               # výchozí jazyk rozhraní: cs, en, nebo prázdné = podle prohlížeče
     "dock_added": False,      # macOS: instalátor už jednou přidal Pult do Docku (když ho pak uživatel odebere, nevracet)
+    "agent_skill": True,      # instalátor nasazuje skill pult pro Claude Code a Codex (--no-claude vypne)
+    "agent_instructions": False,  # blok v globálním CLAUDE.md / AGENTS.md: jen na výslovné přání (--agent-instructions)
     "author_card": True,      # kartička „kdo Pult udělal“ a odkaz na autora (firemní verze ji vypíná)
     "access_code": "",
     "proxy": 1080,            # výška náhledových videí: 720, 1080, 1440, 2160

@@ -44,7 +44,7 @@ Update Pult: https://github.com/jan-visual/pult (follow "Updating" in INSTALL.md
 
 ## How it works with your AI agent
 
-The installer adds a `pult` command and a `pult` skill for Claude Code and Codex (plus a short block in `CLAUDE.md` / `AGENTS.md`). The agent uses:
+The installer adds a `pult` command and a `pult` skill for Claude Code and Codex. It leaves your global `CLAUDE.md` / `AGENTS.md` alone unless you pass `--agent-instructions`. The agent uses:
 
 | Command | What it does |
 |---|---|

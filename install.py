@@ -4,7 +4,7 @@
   macOS:    python3 install.py
   Windows:  py install.py
 
-Volby: --port 7858, --library CESTA, --no-open, --no-claude, --install-ffmpeg, --uninstall [--purge]
+Volby: --port 7858, --library CESTA, --no-open, --no-claude, --agent-instructions, --no-agent-instructions, --install-ffmpeg, --uninstall [--purge]
 Instalace je opakovatelná: novější verze přepíše aplikaci, nastavení a knihovna zůstanou.
 """
 import argparse
@@ -492,51 +492,79 @@ def agent_block(shim, port):
         MARK_B])
 
 
-def install_claude(shim, port):
-    """Skill pult a blok pokynů pro všechny nalezené agenty (Claude Code, Codex)."""
+def block_span(text):
+    """Kde v souboru leží blok Pultu: (začátek, konec), nebo None."""
+    a = text.find(MARK_A)
+    z = text.find(MARK_B, a + len(MARK_A)) if a >= 0 else -1
+    return (a, z + len(MARK_B)) if a >= 0 and z >= 0 else None
+
+
+def read_md(md):
+    return open(md, encoding="utf-8", errors="surrogateescape").read() if os.path.exists(md) else ""
+
+
+def write_md(md, text):
+    with open(md, "w", encoding="utf-8", errors="surrogateescape") as f:
+        f.write(text)
+
+
+def install_skill(shim, port):
+    """Skill pult pro všechny nalezené agenty (Claude Code, Codex). Načte se, jen když je potřeba."""
     src = open(os.path.join(HERE, "skill", "SKILL.md"), encoding="utf-8").read()
     src = src.replace("{{PULT}}", shim).replace("{{URL}}", "http://localhost:%d" % port).replace("{{LIBRARY}}", config.library())
-    block = agent_block(shim, port)
-    skills, mds = [], []
-    for base, name in agent_dirs():
+    skills = []
+    for base, _name in agent_dirs():
         skill_dir = os.path.join(base, "skills", "pult")
         os.makedirs(skill_dir, exist_ok=True)
         with open(os.path.join(skill_dir, "SKILL.md"), "w", encoding="utf-8") as f:
             f.write(src)
-        md = os.path.join(base, name)
-        cur = open(md, encoding="utf-8", errors="surrogateescape").read() if os.path.exists(md) else ""
-        a = cur.find(MARK_A)
-        z = cur.find(MARK_B, a + len(MARK_A)) if a >= 0 else -1
-        if a >= 0 and z >= 0:
-            b = z + len(MARK_B)
-            if cur[a:b] != block and os.path.exists(md):
-                shutil.copy2(md, md + ".before-pult-update")  # kdo si blok upravil, má zálohu
-            cur = cur[:a] + block + cur[b:]
-        else:
-            cur = (cur.rstrip() + "\n\n" if cur.strip() else "") + block + "\n"
-        with open(md, "w", encoding="utf-8", errors="surrogateescape") as f:
-            f.write(cur)
         skills.append(skill_dir)
+    return skills
+
+
+def sync_agent_blocks(shim, port, add):
+    """Globální pokyny se načítají v každém chatu a v každém projektu, proto je bez výslovného přání (add=False)
+    instalace nepřidává. Blok, který už v souboru je, jen obnoví. Vrací soubory, které blok obsahují."""
+    block = agent_block(shim, port)
+    mds = []
+    for base, name in agent_dirs():
+        md = os.path.join(base, name)
+        cur = read_md(md)
+        span = block_span(cur)
+        if span:
+            if cur[span[0]:span[1]] != block:
+                shutil.copy2(md, md + ".before-pult-update")  # kdo si blok upravil, má zálohu
+                write_md(md, cur[:span[0]] + block + cur[span[1]:])
+        elif add:
+            os.makedirs(base, exist_ok=True)
+            write_md(md, (cur.rstrip() + "\n\n" if cur.strip() else "") + block + "\n")
+        else:
+            continue
         mds.append(md)
-    return ", ".join(skills), ", ".join(mds)
+    return mds
 
 
-def remove_claude():
+def agent_bases():
     bases = [(claude_dir(), "CLAUDE.md"), (os.path.join(HOME, ".codex"), "AGENTS.md")]
     if os.environ.get("CODEX_HOME"):
         bases.append((os.path.expanduser(os.environ["CODEX_HOME"]), "AGENTS.md"))
-    for base, name in bases:
-        shutil.rmtree(os.path.join(base, "skills", "pult"), ignore_errors=True)
+    return bases
+
+
+def remove_agent_blocks():
+    for base, name in agent_bases():
         md = os.path.join(base, name)
-        if os.path.exists(md):
-            cur = open(md, encoding="utf-8", errors="surrogateescape").read()
-            a = cur.find(MARK_A)
-            z = cur.find(MARK_B, a + len(MARK_A)) if a >= 0 else -1
-            if a >= 0 and z >= 0:
-                b = z + len(MARK_B)
-                rest = (cur[:a].rstrip() + "\n\n" + cur[b:].lstrip()).strip()
-                with open(md, "w", encoding="utf-8", errors="surrogateescape") as f:
-                    f.write(rest + "\n" if rest else "")
+        cur = read_md(md)
+        span = block_span(cur)
+        if span:
+            rest = (cur[:span[0]].rstrip() + "\n\n" + cur[span[1]:].lstrip()).strip()
+            write_md(md, rest + "\n" if rest else "")
+
+
+def remove_claude():
+    for base, _name in agent_bases():
+        shutil.rmtree(os.path.join(base, "skills", "pult"), ignore_errors=True)
+    remove_agent_blocks()
 
 
 # ---------- pomocné ----------
@@ -598,6 +626,15 @@ def install(a):
     if sys.version_info < (3, 9):
         sys.exit("Pult needs Python 3.9 or newer (found %s)." % sys.version.split()[0])
     cfg = config.load()
+    # Volby pro agenty se pamatují, ať je pult update (spouští instalátor bez voleb) nezruší.
+    if a.no_claude:
+        cfg["agent_skill"] = False
+    if a.agent_skill or a.agent_instructions:
+        cfg["agent_skill"] = True
+    if a.agent_instructions:
+        cfg["agent_instructions"] = True
+    if a.no_agent_instructions:
+        cfg["agent_instructions"] = False
     if a.port:
         cfg["port"] = a.port
     if getattr(a, "lang", None):
@@ -651,9 +688,14 @@ def install(a):
         cfg = config.load()
         cfg["dock_added"] = True
         config.save(cfg)
-    if not a.no_claude:
-        skill, md = install_claude(shim, port)
-        say("✓ AI agents: skill %s · instructions in %s" % (skill, md))
+    if a.no_agent_instructions:
+        remove_agent_blocks()
+        say("✓ AI agents: Pult's block removed from the global instructions")
+    elif cfg.get("agent_skill", True):
+        for md in sync_agent_blocks(shim, port, bool(cfg.get("agent_instructions"))):
+            say("✓ AI agents: global instructions in %s" % md)
+    if cfg.get("agent_skill", True):
+        say("✓ AI agents: skill %s" % ", ".join(install_skill(shim, port)))
     if a.dictation:
         say("… Dictation: installing speech-to-text (Whisper large-v3-turbo), may take a few minutes")
         r = subprocess.run([python_exe(), os.path.join(app, "cli.py"), "dictation", "install"], env=dict(os.environ, PULT_CONFIG=config.config_path()))
@@ -711,7 +753,10 @@ if __name__ == "__main__":
     ap.add_argument("--port", type=int)
     ap.add_argument("--library")
     ap.add_argument("--no-open", action="store_true")
-    ap.add_argument("--no-claude", action="store_true")
+    ap.add_argument("--no-claude", action="store_true", help="do not touch AI agent files at all (remembered for updates)")
+    ap.add_argument("--agent-skill", action="store_true", help="install the pult skill again after --no-claude")
+    ap.add_argument("--agent-instructions", action="store_true", help="also add a block to the global CLAUDE.md / AGENTS.md (off by default, remembered)")
+    ap.add_argument("--no-agent-instructions", action="store_true", help="remove that block and do not add it again (remembered)")
     ap.add_argument("--no-dock", action="store_true", help="macOS: do not add Pult to the Dock")
     ap.add_argument("--install-ffmpeg", action="store_true")
     ap.add_argument("--dictation", action="store_true", help="also install local speech-to-text for dictation (Whisper, about 2.4 GB)")

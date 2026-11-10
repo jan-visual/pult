@@ -24,7 +24,7 @@ Run from the folder that contains this file:
 - **macOS:** `python3 install.py`
 - **Windows:** `py install.py`
 
-Options: `--library PATH` (where review batches are stored, default `~/Pult`), `--port 7858`, `--no-open` (do not open the browser), `--install-ffmpeg` (try to install ffmpeg automatically), `--dictation` (also install local dictation, see below), `--lang en|cs` (interface language; by default it follows the browser).
+Options: `--library PATH` (where review batches are stored, default `~/Pult`), `--port 7858`, `--no-open` (do not open the browser), `--install-ffmpeg` (try to install ffmpeg automatically), `--dictation` (also install local dictation, see below), `--lang en|cs` (interface language; by default it follows the browser), `--no-claude` (leave AI agent files alone), `--agent-instructions` (see below).
 
 **Microphone dictation:** on first launch Pult shows a short setup guide. The recommended option is ElevenLabs Scribe: the user pastes their own API key into the guide and nothing gets installed. Install local Whisper (free and private, a few GB of libraries and models) only if the user asks for it: `--dictation` during install, or `pult dictation install` at any time. On Windows it needs Python 3.9 to 3.13.
 
@@ -33,7 +33,7 @@ The installer:
 - makes it start at login (macOS LaunchAgent `cz.pult.server`, Windows `Pult.vbs` in the Startup folder) and starts the server right away,
 - creates the `pult` command (macOS `~/.local/bin/pult`, Windows `%LOCALAPPDATA%\Pult\bin\pult.cmd`, added to PATH),
 - on macOS builds the native **Pult app** (`~/Applications/Pult.app`: its own window, Dock icon and microphone for dictation; compiled locally with `swiftc` from the Command Line Tools in a few seconds) and adds it to the Dock (skip with `--no-dock`). If it prints `! Native app not built`, run `xcode-select --install`, wait until it finishes and run the installer again; on Windows it creates Start menu › Pult,
-- teaches the AI agents on this computer to use Pult: installs the `pult` skill and adds a short block (between the `<!-- PULT:START -->` and `<!-- PULT:END -->` markers) for Claude Code (`~/.claude/skills/pult/`, `~/.claude/CLAUDE.md`) and, when Codex is installed, for Codex (`~/.codex/skills/pult/`, `~/.codex/AGENTS.md`),
+- teaches the AI agents on this computer to use Pult by installing the `pult` skill for Claude Code (`~/.claude/skills/pult/`) and, when Codex is installed, for Codex (`~/.codex/skills/pult/`). It does **not** change the global `~/.claude/CLAUDE.md` or `~/.codex/AGENTS.md`, because those load in every chat of every project. Add `--agent-instructions` only if the user asks for that. `--no-agent-instructions` removes the block again. Both choices are remembered for updates,
 - prints a JSON status at the end and opens Pult (on macOS the app, elsewhere the browser).
 
 ## 4. Verify
