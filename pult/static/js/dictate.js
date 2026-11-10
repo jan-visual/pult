@@ -194,6 +194,10 @@ async function upload(seg) {
 // zprávy ze serveru (přepis hotový / chyba)
 export function onMessage(m) {
   if (m.state === "queued" || !st.pending.has(m.id)) return;
+  if (m.state === "retry") {  // úsek zůstává ve frontě, server ho zkusí znovu sám
+    if (m.first) toast("Přepis diktátu se nepovedl (síť nebo ElevenLabs). Zkouším to znovu, nic se neztratí.", { ms: 6000 });
+    return;
+  }
   st.pending.delete(m.id);
   if (m.state === "error") toast("Přepis diktátu selhal: " + (m.error || "neznámá chyba"), { error: true, ms: 6000 });
   else if (!m.count) toast("V diktátu jsem nerozpoznal žádná slova.", { ms: 2500 });

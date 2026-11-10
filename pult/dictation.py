@@ -6,6 +6,8 @@ import http.client
 import json
 import os
 import secrets
+import socket
+import ssl
 import queue
 import re
 import subprocess
@@ -106,8 +108,11 @@ def el_request(key, wav_bytes, lang="cs"):
     body = b"".join(("--%s\r\nContent-Disposition: form-data; name=\"%s\"\r\n\r\n%s\r\n" % (boundary, k, v)).encode() for k, v in fields.items())
     body += ("--%s\r\nContent-Disposition: form-data; name=\"file\"; filename=\"diktat.wav\"\r\nContent-Type: audio/wav\r\n\r\n" % boundary).encode()
     body += wav_bytes + ("\r\n--%s--\r\n" % boundary).encode()
-    c = http.client.HTTPSConnection(EL_HOST, timeout=120)
+    # krátký limit na spojení (výpadek sítě se pozná do 15 s), delší na nahrání a přepis
+    c = http.client.HTTPSConnection(EL_HOST, timeout=15)
     try:
+        c.connect()
+        c.sock.settimeout(180)
         c.request("POST", EL_PATH, body=body, headers={"xi-api-key": key, "Accept": "application/json",
                                                        "Content-Type": "multipart/form-data; boundary=%s" % boundary})
         r = c.getresponse()
@@ -131,7 +136,9 @@ def el_request(key, wav_bytes, lang="cs"):
             msg = msg.get("message") if isinstance(msg, dict) else msg
         except ValueError:
             msg = data[:200]
-        raise RuntimeError("ElevenLabs: %s %s" % (r.status, msg))
+        err = RuntimeError("ElevenLabs: %s %s" % (r.status, msg))
+        err.transient = r.status == 429 or r.status >= 500  # přetížení nebo výpadek u nich: zkusit znovu
+        raise err
     return json.loads(data)
 
 
@@ -450,6 +457,19 @@ def to_comments(meta, segments, items):
     return out
 
 
+RETRY_WAIT = (10, 30, 60, 120, 300, 600, 900)  # s: po výpadku sítě to zkouší zhruba 35 minut
+
+
+def transient(e):
+    """Dočasná chyba (síť, výpadek nebo přetížení služby): přepis má smysl zopakovat."""
+    return bool(getattr(e, "transient", False)) or isinstance(e, (socket.timeout, TimeoutError, ConnectionError, ssl.SSLError,
+                                                                  http.client.HTTPException, OSError)) and not isinstance(e, FileNotFoundError)
+
+
+def retry_later(bid, sid, wait):
+    threading.Timer(wait, lambda: jobs.put((bid, sid))).start()
+
+
 def process(bid, sid):
     d = ddir(bid)
     mp = os.path.join(d, sid + ".json")
@@ -477,6 +497,14 @@ def process(bid, sid):
         meta.update(state="done", comments=added, text=" ".join(s.get("text", "") for s in segs).strip(), took=round(time.time() - t0, 2))
         emit({"type": "dictation", "batch": bid, "id": sid, "from": meta.get("from"), "state": "done", "count": len(added)})
     except Exception as e:  # noqa: BLE001
+        tries = int(meta.get("tries") or 0)
+        if cloud() and transient(e) and tries < len(RETRY_WAIT):
+            wait = RETRY_WAIT[tries]
+            meta.update(state="queued", tries=tries + 1, error=str(e))
+            log("Diktování: přepis se nepovedl (%s), zkusím znovu za %d s (%d. pokus)" % (e, wait, tries + 2))
+            emit({"type": "dictation", "batch": bid, "id": sid, "from": meta.get("from"), "state": "retry", "wait": wait, "first": tries == 0})
+            retry_later(bid, sid, wait)
+            return
         meta.update(state="error", error=str(e))
         log("Diktování: přepis selhal:", e)
         emit({"type": "dictation", "batch": bid, "id": sid, "from": meta.get("from"), "state": "error", "error": str(e)})

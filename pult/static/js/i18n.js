@@ -94,6 +94,7 @@ const EN = {
   // diktování
   "Diktovat": "Dictate", "Diktuji": "Dictating", "Přepisuji…": "Transcribing…", "Diktovat připomínky mikrofonem (D)": "Dictate notes with the microphone (D)",
   "Diktuji · vypnout (D)": "Dictating · turn off (D)", "Vypnout diktování (D)": "Turn off dictation (D)", "Dokončuji přepis diktátu…": "Finishing transcription…",
+  "Přepis diktátu se nepovedl (síť nebo ElevenLabs). Zkouším to znovu, nic se neztratí.": "Transcription failed (network or ElevenLabs). Retrying, nothing is lost.",
   "V diktátu jsem nerozpoznal žádná slova.": "No words were recognized in the dictation.",
   "Diktování není připravené. Řekni Claudovi „zapni v Pultu diktování“.": "Dictation isn't set up. Ask Claude to “turn on dictation in Pult”.",
   "Diktuji. Mluv, kdy chceš: přepis se objeví v připomínkách u snímku, kde začneš mluvit. Vypneš klávesou D. Nejlíp se sluchátky.": "Dictating. Talk whenever you like: the transcript appears as a note on the frame where you started speaking. Press D to stop. Works best with headphones.",
