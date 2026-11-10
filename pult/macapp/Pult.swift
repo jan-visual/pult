@@ -806,7 +806,7 @@ final class Pult: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItemV
             sel(L("Minimize", "Minimalizovat"), #selector(NSWindow.performMiniaturize(_:)), "m"),
             sel(L("Zoom", "Zvětšit"), #selector(NSWindow.performZoom(_:))),
             .separator(),
-            sel("Pult", #selector(showMainWindow(_:)), "1", target: self),
+            sel("Pult", #selector(showMainWindow(_:)), target: self),
             .separator(),
             sel(L("Bring All to Front", "Vše do popředí"), #selector(NSApplication.arrangeInFront(_:))),
         ])

@@ -18,6 +18,9 @@ const EN = {
   "Mikrofon změněn. Platí od dalšího zapnutí diktování.": "Microphone changed. It applies the next time you turn dictation on.",
   "Originály zůstanou na místě, Pult si z nich připraví jen náhledy.": "The originals stay where they are. Pult only prepares previews from them.",
   "Přidat na Pult": "Add to Pult",
+  "Připnuté": "Pinned", "Připnout": "Pin", "Připnout nahoru": "Pin to top", "Odepnout": "Unpin", "Skrýt dávky (B)": "Hide batches (B)",
+  "Nastavení (⌘,)": "Settings (⌘,)", "Táhni pro změnu šířky, dvojklik vrátí výchozí": "Drag to resize, double-click to reset",
+  "Smazat dávku": "Delete batch", "Claude čeká na tvoji revizi": "Claude is waiting for your review",
   // obecné
   "Pult": "Pult", "Zrušit": "Cancel", "Uložit": "Save", "Uloženo": "Saved", "Smazat": "Delete", "Smazáno": "Deleted", "Vrátit": "Undo",
   "Otevřít": "Open", "Zavřít (Esc)": "Close (Esc)", "Pokračovat": "Continue", "Začít": "Get started", "Přidat": "Add", "Přidat (Enter)": "Add (Enter)",
@@ -251,7 +254,7 @@ const RX = [
   [/^Natrvalo se smaže (.+) starých dávek z koše\. Vrátit to nepůjde\.$/, "This permanently deletes $1 of old batches from the trash. It can't be undone."],
   [/^Koš: (.+)$/, "Trash: $1"],
   [/^Vybráno (.+)$/, "Selected: $1"], [/^Smazáno (\d.*)$/, "Deleted $1"], [/^Smazáno: (.+)$/, "Deleted: $1"], [/^Smazat (\d+ batch(es)?)$/, "Delete $1"],
-  [/^Nahráno (.+)\. Náhledy se připravují\.$/, "Uploaded $1. Previews are being prepared."], [/^Přidáno (.+)\. Náhledy se připravují\.$/, "Added $1. Previews are being prepared."], [/^(\d+) nepodporovaných vynechám$/, "$1 unsupported will be skipped"],
+  [/^Nahráno (.+)\. Náhledy se připravují\.$/, "Uploaded $1. Previews are being prepared."], [/^Přidáno (.+)\. Náhledy se připravují\.$/, "Added $1. Previews are being prepared."], [/^Zobrazit další \((\d+)\)$/, "Show $1 more"], [/^(\d+) min$/, "$1m"], [/^(\d+) h$/, "$1h"], [/^(\d+) d$/, "$1d"], [/^(\d+) nepodporovaných vynechám$/, "$1 unsupported will be skipped"],
   [/^… a dalších (\d+)$/, "… and $1 more"], [/^Prohlížeč video nepřehraje \(kód (.*?)\)\.?$/, "The browser can't play this video (code $1)."],
   [/^(.+): (.+) \(klikni a přejdi tam\)$/, (m, a, b) => `${a}: ${tr(b)} (click to go there)`], [/^(.+) · Spolu$/, (m, a) => `${tr(a)} · Together`],
   [/^na pultu$/, "on Pult"], [/^Čistá kopie hotová: (.+)$/, "Clean copy ready: $1"], [/^Kopie hotová, ale pořád obsahuje: (.+)$/, "Copy ready, but it still contains: $1"],

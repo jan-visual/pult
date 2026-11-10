@@ -503,8 +503,10 @@ function toggleNotes(force) {
 if (store.get("noSide", false)) app.classList.add("no-side");
 if (store.get("noNotes", false)) app.classList.add("no-notes");
 $("#sideBtn").onclick = toggleSide;
+$("#sideBtnTop").onclick = toggleSide;
 $("#notesBtn").onclick = () => toggleNotes();
 on("show-notes", () => toggleNotes(true));
+on("layout", () => requestAnimationFrame(P.layout));
 on("hide-drawers", () => app.classList.remove("drawer-side", "drawer-notes"));
 
 // iPad: Safari umí posunout celou stránku (klávesnice v panelu, zavření panelu) a nechat ji posunutou.

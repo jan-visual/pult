@@ -1,5 +1,5 @@
 // Pult: seznam dávek, nahrávání souborů (tlačítko i přetažení, klidně celé složky) a akce s dávkou.
-import { $, $$, S, store, api, clientId, esc, icon, emit, on, toast, ago, plural, fmtSize, dialog, confirmBox, menu, copyText } from "./core.js";
+import { $, $$, S, store, api, clientId, esc, icon, emit, on, toast, ago, plural, fmtSize, dialog, confirmBox, menu, copyText, isEN, isApple } from "./core.js";
 
 const EXT = new Set(["jpg", "jpeg", "png", "webp", "gif", "avif", "heic", "heif", "tif", "tiff", "bmp", "tga", "jfif",
   "mp4", "mov", "m4v", "webm", "mkv", "avi", "mxf", "mts", "m2ts", "wmv", "mpg", "mpeg"]);
@@ -30,40 +30,66 @@ async function setLabel(ids, label) {
   await Promise.all(all.map((b) => api("POST", `/api/batch/${encodeURIComponent(b.id)}/label`, { label }).catch(() => toast("Barvu se nepodařilo uložit"))));
 }
 
-function row(b) {
+// ---------- řádek dávky (jako vlákna v t3code: název, stav a čas na jednom řádku, akce při najetí) ----------
+const pinned = new Set(store.get("pinned", []));
+const savePins = () => store.set("pinned", [...pinned].filter((id) => S.batches.some((b) => b.id === id)));
+const SHELF = 8;  // odeslané a smazané: prvních pár, zbytek po kliknutí
+const more = { done: false, dismissed: false };
+function when(iso) {
+  const s = (Date.now() - new Date(iso).getTime()) / 1000, en = isEN();
+  if (!isFinite(s)) return "";
+  if (s < 60) return en ? "now" : "teď";
+  if (s < 3600) return en ? `${Math.floor(s / 60)}m` : `${Math.floor(s / 60)} min`;
+  if (s < 86400) return en ? `${Math.floor(s / 3600)}h` : `${Math.floor(s / 3600)} h`;
+  if (s < 7 * 86400) return en ? `${Math.floor(s / 86400)}d` : `${Math.floor(s / 86400)} d`;
+  const d = new Date(iso);
+  return en ? d.toLocaleDateString("en", { month: "short", day: "numeric" }) : `${d.getDate()}. ${d.getMonth() + 1}.`;
+}
+function status(b) {
+  const busy = b.count - b.ready - b.errors;
+  if (busy > 0) return `<i class="st-ic spin" title="Připravuji ${b.ready}/${b.count}"></i>`;
+  if (b.working) return `<span class="st-ic cl work" title="${esc(b.working.text || "Claude zapracovává revizi")}">${icon("spark")}</span>`;
+  if (b.errors) return `<span class="st-ic err" title="${b.errors} ⚠">⚠</span>`;
+  if (b.status === "open" && b.unsent) return `<i class="st-ic dot warn" title="Rozpracováno, ještě neodesláno"></i>`;
+  if (b.status === "open" && b.waiting) return `<i class="st-ic dot wait" title="Claude čeká na tvoji revizi"></i>`;
+  if (b.claude_done && Date.now() - new Date(b.claude_done.at).getTime() < 30 * 60e3) return `<span class="st-ic cl done" title="${esc(b.claude_done.text || "Claude revizi zapracoval")}">${icon("check")}</span>`;
+  return "";
+}
+function row(b, jump) {
   const busy = b.count - b.ready - b.errors;
   const meta = [];
-  if (busy > 0) meta.push(`<span class="pill">Připravuji ${b.ready}/${b.count}</span>`);
+  if (busy > 0) meta.push(`<span>Připravuji ${b.ready}/${b.count}</span>`);
   else meta.push(`<span>${b.videos === b.count ? plural(b.count, "video", "videa", "videí") : b.videos ? `${b.count} položek` : plural(b.count, "obrázek", "obrázky", "obrázků")}</span>`);
   if (b.drawings) meta.push(`<span class="pill">${icon("pen")}${b.drawings}</span>`);
   if (b.comments) meta.push(`<span class="pill">${icon("chat")}${b.comments}</span>`);
   if (b.approved) meta.push(`<span class="pill ok">✓${b.approved}</span>`);
   if (b.rejected) meta.push(`<span class="pill no">✕${b.rejected}</span>`);
-  if (b.errors) meta.push(`<span class="pill no">⚠ ${b.errors}</span>`);
-  if (b.working) meta.push(`<span class="pill cl work" title="${esc(b.working.text || "Claude zapracovává revizi")}">${icon("spark")}pracuje</span>`);
-  else if (b.claude_done && Date.now() - new Date(b.claude_done.at).getTime() < 30 * 60e3) meta.push(`<span class="pill cl done" title="${esc(b.claude_done.text || "Claude revizi zapracoval")}">${icon("spark")}hotovo</span>`);
-  meta.push(`<span>${esc(ago(b.status !== "open" && b.status_at ? b.status_at : b.created))}</span>`);
   const th = b.thumb ? `style="background-image:url('${esc(b.thumb)}')"` : "";
-  const lc = LABELS[b.label];
+  const lc = LABELS[b.label], pin = pinned.has(b.id);
   return `<button class="brow${S.batch && S.batch.id === b.id ? " on" : ""}${sel.size > 1 && sel.has(b.id) ? " sel" : ""}" data-id="${esc(b.id)}" title="${esc(b.title)}"${lc ? ` data-label="${b.label}" style="--lc:${lc}"` : ""}>
     <span class="th" ${th}>${b.thumb ? "" : icon(b.videos ? "film" : "image")}${busy > 0 ? `<span class="bar"><i style="width:${Math.round((b.ready / b.count) * 100)}%"></i></span>` : ""}</span>
-    <span style="min-width:0"><div class="t">${esc(b.title)}</div><div class="m">${meta.join("")}</div></span>
-    ${b.status === "open" && b.unsent ? '<i class="unsent" title="Rozpracováno, ještě neodesláno"></i>' : ""}</button>`;
+    <span class="rb"><span class="l1"><span class="t">${esc(b.title)}</span>${status(b)}<span class="when">${esc(when(b.status !== "open" && b.status_at ? b.status_at : b.created))}</span>
+      <span class="acts"><span role="button" class="act" data-act="pin" title="${pin ? "Odepnout" : "Připnout"}">${icon(pin ? "x" : "pin")}</span>${b.status !== "dismissed" ? `<span role="button" class="act" data-act="del" title="Smazat dávku">${icon("trash")}</span>` : ""}</span></span>
+      <span class="l2">${meta.join("")}</span></span>
+    ${jump ? `<kbd class="jump">${MODK}${jump}</kbd>` : ""}</button>`;
 }
 
 export function renderList() {
   const q = $("#search").value.trim().toLowerCase();
   const list = S.batches.filter((b) => !q || b.title.toLowerCase().includes(q));
-  const groups = [["open", "K revizi"], ["done", "Odeslané"], ["dismissed", "Smazané"]];
-  let html = "";
-  for (const [key, label] of groups) {
-    const items = list.filter((b) => b.status === key);
+  const pins = list.filter((b) => pinned.has(b.id) && b.status !== "dismissed");
+  const groups = [["pinned", "Připnuté", pins], ["open", "K revizi", list.filter((b) => b.status === "open" && !pinned.has(b.id))],
+    ["done", "Odeslané", list.filter((b) => b.status === "done" && !pinned.has(b.id))], ["dismissed", "Smazané", list.filter((b) => b.status === "dismissed")]];
+  let html = "", n = 0;
+  for (const [key, label, items] of groups) {
     if (!items.length && key !== "open") continue;
-    const isOpen = open[key] || !!q;
-    html += `<div class="group-h"><button data-g="${key}" class="${isOpen ? "" : "closed"}">${icon("chev-d")}${label}</button><span>${items.length || ""}</span></div>`;
+    const isOpen = key === "pinned" || open[key] || !!q;
+    html += `<div class="group-h">${key === "pinned" ? `<span class="g-l">${label}</span>` : `<button data-g="${key}" class="${isOpen ? "" : "closed"}">${icon("chev-d")}${label}</button>`}<span>${items.length || ""}</span></div>`;
     if (!isOpen) continue;
     if (!items.length) html += `<div class="side-empty">${q ? "Nic nenalezeno." : "Všechno prohlédnuto. 🎉<br>Nové dávky se tu objeví samy."}</div>`;
-    html += items.slice(0, key === "open" ? 500 : 60).map(row).join("");
+    const cap = key === "open" || key === "pinned" || more[key] || q ? 500 : SHELF;
+    html += items.slice(0, cap).map((b) => row(b, ++n <= 9 ? n : 0)).join("");
+    if (items.length > cap) html += `<button class="side-more" data-more="${key}">Zobrazit další (${items.length - cap})</button>`;
   }
   for (const id of [...sel]) if (!S.batches.some((b) => b.id === id)) sel.delete(id);
   if (sel.size > 1) html += `<div class="selbar"><span>Vybráno ${plural(sel.size, "dávka", "dávky", "dávek")}</span>
@@ -72,6 +98,46 @@ export function renderList() {
 }
 $("#search").addEventListener("input", renderList);
 $("#search").addEventListener("keydown", (e) => { e.stopPropagation(); if (e.key === "Escape") { e.target.value = ""; renderList(); e.target.blur(); } });
+
+// ⌘1 až ⌘9: skok na dávku podle pořadí v seznamu; když držíš ⌘, čísla se ukážou (jako v t3code)
+const MODK = isApple ? "⌘" : "Ctrl+";
+let hintTimer = 0;
+const hints = (on) => { clearTimeout(hintTimer); if (on) hintTimer = setTimeout(() => $("#batchList").classList.add("jump-on"), 350); else $("#batchList").classList.remove("jump-on"); };
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Meta" || (!isApple && e.key === "Control")) return hints(true);
+  const mod = isApple ? e.metaKey : e.ctrlKey;
+  if (!mod || e.shiftKey || e.altKey || !/^Digit[1-9]$/.test(e.code)) return;
+  const to = visibleIds()[+e.code.slice(-1) - 1];
+  if (!to) return;
+  e.preventDefault(); e.stopPropagation(); hints(false);
+  sel.clear(); sel.add(to); anchor = to;
+  emit("open-batch", { id: to });
+}, true);
+document.addEventListener("keyup", (e) => { if (e.key === "Meta" || e.key === "Control") hints(false); });
+addEventListener("blur", () => hints(false));
+
+// ---------- šířka panelu: tažení za okraj, dvojklik vrátí výchozí ----------
+const SIDE_MIN = 208, SIDE_DEF = 264;
+function sideMax() { const notes = $("#app").classList.contains("no-notes") ? 0 : 328; return Math.max(SIDE_MIN, Math.min(480, innerWidth - notes - 640)); }
+function setSideW(w, save) {
+  const v = Math.round(Math.max(SIDE_MIN, Math.min(sideMax(), w)));
+  $("#app").style.setProperty("--side-w", v + "px");
+  if (save) store.set("sideW", v);
+  emit("layout");
+}
+setSideW(store.get("sideW", SIDE_DEF), false);
+addEventListener("resize", () => setSideW(store.get("sideW", SIDE_DEF), false));
+$("#sideRail").addEventListener("pointerdown", (e) => {
+  e.preventDefault();
+  const rail = e.currentTarget, x0 = e.clientX, w0 = $("#side").getBoundingClientRect().width;
+  rail.setPointerCapture(e.pointerId);
+  document.documentElement.classList.add("resizing");
+  const mv = (ev) => setSideW(w0 + ev.clientX - x0, false);
+  const up = (ev) => { rail.removeEventListener("pointermove", mv); rail.removeEventListener("pointerup", up); document.documentElement.classList.remove("resizing"); setSideW(w0 + ev.clientX - x0, true); };
+  rail.addEventListener("pointermove", mv);
+  rail.addEventListener("pointerup", up);
+});
+$("#sideRail").addEventListener("dblclick", () => setSideW(SIDE_DEF, true));
 
 // ---------- výběr více dávek jako ve Finderu: ⌘/Ctrl klik přidá, ⇧ klik vybere rozsah, ⌫ smaže ----------
 const sel = new Set();
@@ -89,6 +155,17 @@ function selectRange(id) {
 }
 
 $("#batchList").addEventListener("click", (e) => {
+  const m = e.target.closest("[data-more]");
+  if (m) { more[m.dataset.more] = true; renderList(); return; }
+  const ra = e.target.closest("[data-act]");
+  if (ra) {
+    e.stopPropagation();
+    const b = S.batches.find((x) => x.id === ra.closest(".brow").dataset.id);
+    if (!b) return;
+    if (ra.dataset.act === "pin") { pinned.has(b.id) ? pinned.delete(b.id) : pinned.add(b.id); savePins(); renderList(); }
+    else removeBatches([b.id]);
+    return;
+  }
   const g = e.target.closest("[data-g]");
   if (g) { open[g.dataset.g] = !open[g.dataset.g]; store.set("groups", open); renderList(); return; }
   const act = e.target.closest("[data-selact]");
@@ -184,6 +261,7 @@ export function batchMenu(anchor, b) {
   if (!b) return;
   const st = b.status;
   menu(anchor, [
+    { label: pinned.has(b.id) ? "Odepnout" : "Připnout nahoru", icon: "pin", run: () => { pinned.has(b.id) ? pinned.delete(b.id) : pinned.add(b.id); savePins(); renderList(); } },
     { label: "Přejmenovat", icon: "pen", run: () => renameBatch(b) },
     { label: "Přidat soubory do dávky", icon: "plus", run: () => pickFiles(b.id) },
     ...LABEL_KEYS.map((k, i) => ({ label: `${b.label === k ? "✓ " : ""}${LABEL_NAMES[k]} (${i + 1})`, dot: LABELS[k], run: () => setLabel([b.id], k) })),
