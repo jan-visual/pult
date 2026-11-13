@@ -15,17 +15,17 @@ Funguje na **macOS i Windows**, v prohlížeči nebo jako samostatná aplikace s
 Otevři Claude Code nebo Codex a vlož:
 
 ```
-Nainstaluj mi Pult: https://github.com/jan-visual/pult (postupuj podle INSTALL.md)
+Nainstaluj mi Pult: https://github.com/janpils/pult (postupuj podle INSTALL.md)
 ```
 
 Agent stáhne repozitář, doinstaluje Python a ffmpeg, nastaví spouštění po přihlášení a na Macu sestaví aplikaci Pult s ikonou v Docku.
 
-Ručně: `git clone https://github.com/jan-visual/pult ~/pult-source && cd ~/pult-source && python3 install.py` (Windows PowerShell: `git clone https://github.com/jan-visual/pult "$HOME\pult-source"; cd "$HOME\pult-source"; py install.py`; potřeba Python 3.9+ a pro videa ffmpeg).
+Ručně: `git clone https://github.com/janpils/pult ~/pult-source && cd ~/pult-source && python3 install.py` (Windows PowerShell: `git clone https://github.com/janpils/pult "$HOME\pult-source"; cd "$HOME\pult-source"; py install.py`; potřeba Python 3.9+ a pro videa ffmpeg).
 
 Aktualizace: řekni agentovi „Aktualizuj Pult“ nebo spusť `pult update`. Knihovna a nastavení zůstanou. U starší verze Pultu místo toho vlož:
 
 ```
-Aktualizuj Pult: https://github.com/jan-visual/pult (postupuj podle části „Updating“ v INSTALL.md)
+Aktualizuj Pult: https://github.com/janpils/pult (postupuj podle části „Updating“ v INSTALL.md)
 ```
 
 *English: [README.md](README.md)*

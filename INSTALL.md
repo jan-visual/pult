@@ -1,10 +1,10 @@
 # Installing Pult (instructions for your AI agent)
 
-The user wants Pult installed. They gave you this folder, a zip, or the link https://github.com/jan-visual/pult. Follow these steps and only interrupt the user when you really have to. Talk to the user in their own language.
+The user wants Pult installed. They gave you this folder, a zip, or the link https://github.com/janpils/pult. Follow these steps and only interrupt the user when you really have to. Talk to the user in their own language.
 
 ## 0. Get the code
 
-If you only have the link: `git clone https://github.com/jan-visual/pult ~/pult-source` (Windows PowerShell: `git clone https://github.com/jan-visual/pult "$HOME\pult-source"`) and work in that folder. Do not clone it to `~/pult`: on macOS that is the same folder as the default library `~/Pult`. Without git, download the ZIP from GitHub (Code › Download ZIP) and unpack it.
+If you only have the link: `git clone https://github.com/janpils/pult ~/pult-source` (Windows PowerShell: `git clone https://github.com/janpils/pult "$HOME\pult-source"`) and work in that folder. Do not clone it to `~/pult`: on macOS that is the same folder as the default library `~/Pult`. Without git, download the ZIP from GitHub (Code › Download ZIP) and unpack it.
 
 ## 1. Check the system and Python
 

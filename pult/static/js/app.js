@@ -1,5 +1,5 @@
 // Pult: hlavní modul (spojení se serverem, navigace, pás položek, zkratky, lidé na pultu).
-const VERSION = "2.10.10";
+const VERSION = "2.10.11";
 import { $, $$, S, store, api, dialog, clientId, clock, esc, icon, on, emit, toast, ago, plural, initials, isTouch, anyDialog, dialogs, closeMenu, menu, fmtTC, dbg } from "./core.js";
 import * as P from "./player.js";
 import * as D from "./draw.js";
@@ -85,7 +85,7 @@ function renderHeader() {
   renderWait();
 }
 // ---------- kdo Pult udělal: jednou, po třetí odeslané revizi ----------
-export const AUTHOR = { web: "https://janpils.com", webEn: "https://janpils.com", call: "mailto:hello@janpils.com", github: "https://github.com/jan-visual/pult" };
+export const AUTHOR = { web: "https://janpils.com", webEn: "https://janpils.com", call: "mailto:hello@janpils.com", github: "https://github.com/janpils/pult" };
 function authorCardSoon() {
   const n = store.get("submits", 0) + 1;
   store.set("submits", n);

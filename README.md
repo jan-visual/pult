@@ -17,17 +17,17 @@ Runs locally on **macOS and Windows**, in the browser or as a standalone app. iP
 Open Claude Code or Codex and paste:
 
 ```
-Install Pult for me: https://github.com/jan-visual/pult (follow INSTALL.md)
+Install Pult for me: https://github.com/janpils/pult (follow INSTALL.md)
 ```
 
 The agent clones the repo, installs Python and ffmpeg if needed, sets up Pult to start on login and on a Mac builds the Pult app with its own Dock icon.
 
-Manual install: `git clone https://github.com/jan-visual/pult ~/pult-source && cd ~/pult-source && python3 install.py` (Windows PowerShell: `git clone https://github.com/jan-visual/pult "$HOME\pult-source"; cd "$HOME\pult-source"; py install.py`). Needs Python 3.9+ and ffmpeg for video.
+Manual install: `git clone https://github.com/janpils/pult ~/pult-source && cd ~/pult-source && python3 install.py` (Windows PowerShell: `git clone https://github.com/janpils/pult "$HOME\pult-source"; cd "$HOME\pult-source"; py install.py`). Needs Python 3.9+ and ffmpeg for video.
 
 To update, tell your agent "Update Pult" or run `pult update`. Your library and settings stay. On an older Pult paste this instead:
 
 ```
-Update Pult: https://github.com/jan-visual/pult (follow "Updating" in INSTALL.md)
+Update Pult: https://github.com/janpils/pult (follow "Updating" in INSTALL.md)
 ```
 
 ## What you can do

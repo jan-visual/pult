@@ -117,6 +117,6 @@ Pult is open code: a Python server (standard library only), plain JavaScript for
 2. Code: the installed copy is in the `app` folder next to the settings (macOS `~/Library/Application Support/Pult/app`, Windows `%LOCALAPPDATA%\Pult\app`): `server.py` (HTTP and API), `library.py` (batches, previews, reviews), `dictation.py` + `asr.py` (dictation), `tls.py` (https), `static/js/*.js` (UI). On macOS the app window is `macapp/Pult.swift`.
 3. Fix it preferably in the folder Pult was installed from (the git clone) and run `install.py` again: the copy in `app` is overwritten by every install. A quick fix directly in `app` works too, but the next update removes it.
 4. After a Python change `pult restart`; after a web change reloading the page is enough (`pult reload` reloads all devices).
-5. Describe the fix briefly so the user can pass it to Pult's author (Jan Pils, https://github.com/jan-visual/pult) and it gets into the next version.
+5. Describe the fix briefly so the user can pass it to Pult's author (Jan Pils, https://github.com/janpils/pult) and it gets into the next version.
 
 Pult itself never deletes anything permanently (old batches go to the `kos` trash folder in the library).
