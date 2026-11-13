@@ -1,5 +1,5 @@
 // Pult: hlavní modul (spojení se serverem, navigace, pás položek, zkratky, lidé na pultu).
-const VERSION = "2.10.9";
+const VERSION = "2.10.10";
 import { $, $$, S, store, api, dialog, clientId, clock, esc, icon, on, emit, toast, ago, plural, initials, isTouch, anyDialog, dialogs, closeMenu, menu, fmtTC, dbg } from "./core.js";
 import * as P from "./player.js";
 import * as D from "./draw.js";
@@ -591,8 +591,10 @@ document.addEventListener("keydown", (e) => {
     case " ": used(); P.toggle(); P.kbarPoke(); break;
     case "k": case "K": used(); P.pause(); P.kbarPoke(); break;
     case "j": case "J": used(); P.shuttle(-1); break;
-    case "l": used(); P.shuttle(1); break;
-    case "L": used(); P.setLoop(!S.loop); toast(S.loop ? "Smyčka zapnutá" : "Smyčka vypnutá", { ms: 1200 }); break;
+    case "l": case "L":  // podle Shiftu, ne podle písmene: se zapnutým Caps Lockem musí L dál zrychlovat
+      used();
+      if (!e.shiftKey) { P.shuttle(1); break; }
+      P.setLoop(!S.loop); toast(S.loop ? "Smyčka zapnutá" : "Smyčka vypnutá", { ms: 1200 }); break;
     case "ArrowLeft": used(); P.isVideo() ? P.jump(e.shiftKey ? -1 : -5) : step(-1); break;
     case "ArrowRight": used(); P.isVideo() ? P.jump(e.shiftKey ? 1 : 5) : step(1); break;
     case "ArrowUp": case "PageUp": used(); step(-1); break;

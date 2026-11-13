@@ -170,21 +170,22 @@ export function jump(sec) {
 export function goEdge(end) { if (!isVideo()) return; if (!vid.paused) vid.pause(); seekFrame(end ? frames() - 1 : 0); }
 
 // ---------- J / K / L jako ve střižně ----------
-// L: dopředu 1× → 1,5× → 2× → 1×. J: pozpátku 1× → 2× → 1×. K: stop.
+// L: dopředu a každým stiskem rychleji 1× → 1,5× → 2× → 3× → 4× (na maximu zůstane). J: pozpátku 1× → 2× → 4×. K: stop.
 // Pozpátku prohlížeč video přehrát neumí, takže se plynule převíjí skoky po snímcích (bez zvuku).
 let rev = null;
+const SHUTTLE = [1, 1.5, 2, 3, 4];
 const rateText = (r) => String(r).replace(".", ",") + "×";
 export const reversing = () => !!rev;
 export function shuttle(dir) {
   if (!isVideo()) return;
   if (dir > 0) {
-    const from = rev ? 0 : vid.paused ? 0 : S.rate;
+    const from = rev || vid.paused ? 0 : S.rate;
     stopReverse(false);
-    setRate(from === 1 ? 1.5 : from === 1.5 ? 2 : 1);
+    setRate(SHUTTLE.find((r) => r > from + 1e-6) || SHUTTLE[SHUTTLE.length - 1]);
     if (vid.paused) play();
     toast(`▶ ${rateText(S.rate)}`, { ms: 900 });
   } else {
-    if (rev) rev.rate = rev.rate === 1 ? 2 : 1;
+    if (rev) rev.rate = Math.min(rev.rate * 2, 4);
     else startReverse();
     toast(`◀ pozpátku ${rateText(rev.rate)}`, { ms: 900 });
   }
@@ -224,7 +225,7 @@ export function setRate(r, pub = true) {
   $$(".rates button").forEach((b) => b.classList.toggle("on", +b.dataset.r === r));
   if (pub) publish();
 }
-export function rateStep(d) { const i = RATES.indexOf(S.rate); setRate(RATES[Math.max(0, Math.min(RATES.length - 1, (i < 0 ? 0 : i) + d))]); toast(`Rychlost ${rateText(S.rate)}`, { ms: 1000 }); }
+export function rateStep(d) { let i = RATES.indexOf(S.rate); if (i < 0) i = S.rate > RATES[RATES.length - 1] ? RATES.length : 0; setRate(RATES[Math.max(0, Math.min(RATES.length - 1, i + d))]); toast(`Rychlost ${rateText(S.rate)}`, { ms: 1000 }); }
 $$(".rates button").forEach((b) => (b.onclick = () => { setRate(+b.dataset.r); kbarPoke(); }));
 
 export function setLoop(v) { S.loop = v; store.set("loop", v); vid.loop = v; $("#loopBtn").classList.toggle("on", v); }

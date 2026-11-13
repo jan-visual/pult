@@ -61,7 +61,7 @@ const EN = {
   "Předchozí / další položka": "Previous / next item", "Předchozí / další připomínka": "Previous / next note",
   "Předchozí připomínka už není": "No previous note", "Další připomínka už není": "No more notes", "Všechno prohlédnuto": "All reviewed",
   "Přiblížit / oddálit": "Zoom in / out", "Přizpůsobit obraz": "Fit to screen", "Posun dvěma prsty": "Two-finger pan", "sevřít prsty": "pinch",
-  "Začátek / konec": "Start / end", "Dopředu 1× → 1,5× → 2× → 1×": "Forward 1× → 1.5× → 2× → 1×", "Pozpátku 1× → 2× → 1×": "Reverse 1× → 2× → 1×",
+  "Začátek / konec": "Start / end", "Dopředu, každým stiskem rychleji (až 4×)": "Forward, faster with each press (up to 4×)", "Pozpátku, každým stiskem rychleji (až 4×)": "Reverse, faster with each press (up to 4×)",
   "Posun zvuku (Spolu)": "Audio offset (Together)", "Automaticky": "Automatic",
   "Když video koukáš na iPadu a zvuk posloucháš z tohohle zařízení (třeba AirPods na Macu), musí tohle zařízení hrát o kousek napřed. Posuň, dokud nesedí rty na zvuk. Platí jen pro toto zařízení a jen se zapnutým Spolu.":
     "When you watch on an iPad but listen through this device (e.g. AirPods on a Mac), this device has to play slightly ahead. Move the slider until lips match the sound. Applies only to this device and only with Together on.",

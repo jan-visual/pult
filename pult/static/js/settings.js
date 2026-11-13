@@ -327,7 +327,7 @@ export function openHelp() {
   const rows = [
     ["Přehrávání"],
     ["Přehrát / pauza", k("mezerník")], ["Stop", k("K")],
-    ["Dopředu 1× → 1,5× → 2× → 1×", k("L")], ["Pozpátku 1× → 2× → 1×", k("J")],
+    ["Dopředu, každým stiskem rychleji (až 4×)", k("L")], ["Pozpátku, každým stiskem rychleji (až 4×)", k("J")],
     ["O snímek zpět / vpřed", k(","), k(".")], ["O 5 s zpět / vpřed", k("←"), k("→")], ["O vteřinu zpět / vpřed", k("⇧←"), k("⇧→")],
     ["Začátek / konec", k("Home"), k("End")], ["Rychlost 1× / 1,5× / 2×", k("tlačítka u časové osy")], ["Smyčka", k("⇧L")], ["Ztlumit", k("M")], ["Celá obrazovka (kino)", k("F")],
     ["Posun dvěma prsty", k("trackpad ⟷")], ["Přiblížit / oddálit", k(`${MOD} + kolečko`), k("sevřít prsty")], ["Přizpůsobit obraz", k("0")],
